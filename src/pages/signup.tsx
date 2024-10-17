@@ -1,8 +1,5 @@
-// App.tsx
+// essentials
 import React from 'react';
-
-// import { Routes, Route } from 'react-router-dom'; // Import Routes and Route
-
 import '../styling/output.css';
 
 // components
