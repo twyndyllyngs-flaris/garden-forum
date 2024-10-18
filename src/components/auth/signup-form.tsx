@@ -47,35 +47,27 @@ export function SignupForm() {
     setError(""); // Clear any previous errors
   
     try {
-      // Check if the email is already registered in Supabase Auth
-      const { user, error: userCheckError } = await supabase.auth.getUserByEmail(email);
+      // Check if the email is confirmed
+      const { data: isConfirmed, error: emailCheckError } = await supabase
+        .rpc('is_email_confirmed', { email });
   
-      // If there's an error checking for existing user, handle it
-      if (userCheckError) {
-        if (userCheckError.message !== "User not found") {
-          setError("Error checking for existing account.");
-          console.log(userCheckError);
-          setLoading(false);
-          return;
-        }
+      if (emailCheckError) {
+        console.error('Error checking email status:', emailCheckError);
+        setError('An error occurred while checking the email status.');
+        return;
       }
   
-      if (user) {
-        // User found, check if their email is confirmed
-        if (!user.user_metadata.email_confirmed_at) {
-          setError("Email is already registered but not yet confirmed. Please check your email for confirmation.");
-          setLoading(false);
-          return;
-        } else {
-          // If email is already confirmed, show an error
-          setError("Email is already registered. Please sign in.");
-          setLoading(false);
-          return;
-        }
+      // Check the email status
+      if (isConfirmed === false) {
+        setError('Please confirm your email before signing up.');
+        return; // Prevent signup if the email is not confirmed
+      } else if (isConfirmed === true) {
+        setError('Email is already registered. Please use a different email.');
+        return; // Prevent signup if the email is already confirmed
       }
   
-      // Proceed with the signup if no user is found
-      const { error: signUpError } = await supabase.auth.signUp({
+      // Proceed with the signup
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -84,31 +76,32 @@ export function SignupForm() {
             providerType: "password",
             first_name: firstName, // Store first name in metadata
             last_name: lastName,   // Store last name in metadata
-            role_id: 1,            // Assign role_id
           },
         },
       });
   
-      setLoading(false); // Set loading to false after the signup process
-  
+      // Check if sign up was successful
       if (signUpError) {
         setError(signUpError.message);
-        return;
+        return; // Return early if there was an error
       }
+  
+      console.log(data);
   
       // Notify user to check their email for confirmation
       setDialog(true);
-  
     } catch (error) {
       setError("An error occurred during the signup process.");
       console.error("Signup Error: ", error);
-      setLoading(false);
+    } finally {
+      setLoading(false); // Ensure loading is set to false in all cases
     }
-  };  
+  };
   
-  const handleLoginRedirect = () : void =>{
+  
+  const handleLoginRedirect = () => {
     navigate("/");
-  }
+  };
 
   return (
     <Card className="mx-auto max-w-sm">
