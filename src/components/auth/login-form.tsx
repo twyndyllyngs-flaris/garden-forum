@@ -1,7 +1,8 @@
-import { Link, useNavigate } from "react-router-dom"; // Import from react-router-dom
-import { useState } from "react"; // Import useState
+import { useState } from "react";
 import { supabase } from "../../config/supabase/supabaseClient"; // Adjust the import path as needed
+import { Link, useNavigate } from "react-router-dom"; // Import from react-router-dom
 
+// components
 import { Button } from "../ui/button";
 import {
   Card,
@@ -21,39 +22,38 @@ export function LoginForm() {
 
   const [email, setEmail] = useState(""); // State for email
   const [password, setPassword] = useState(""); // State for password
+  const [error, setError] = useState(""); // State for error message
+  const [loading, setLoading] = useState(false); // Loading state
 
   const handleLogin = async (event: React.FormEvent) => {
-    event.preventDefault(); // Prevent the default form submission
+    event.preventDefault(); // Prevent default form submission
+    setLoading(true); // Set loading to true when login process starts
+    setError(""); // Clear any previous error
 
-    // const { error } = await supabase.auth.signInWithPassword({
-    //   email,
-    //   password,
-    // });
+    try {
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    // if (error) {
-    //   console.error("Login error:", error.message);
-    //   return;
-    // }
-
-    // navigate("/signup")
-
-    checkUserSession()
-  };
-
-  const checkUserSession = async () => {
-    const { data, error } = await supabase.auth.getUser();
-
-    if (error) {
-      console.error("Error fetching user:", error.message);
-      return;
-    }
-
-    if (data) {
-      console.log("User is signed in:", data.user);
-      // You can now access user information
-    } else {
-      console.log("User is signed out");
-      // Handle the signed-out state (e.g., redirect to login)
+      if (signInError) {
+        if (signInError.message === "Invalid login credentials") {
+          setError("The email or password is incorrect. Please try again.");
+        } else if (signInError.message === "User not found") {
+          setError("This email does not exist. Please sign up first.");
+        } else {
+          setError(signInError.message); // Generic error
+        }
+      } else {
+        console.log("Login successful", data);
+        // Redirect the user to the dashboard after successful login
+        navigate("/guides");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred during login.");
+      console.error("Login exception:", err);
+    } finally {
+      setLoading(false); // Ensure loading is set to false in all cases
     }
   };
 
@@ -66,6 +66,7 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && <p className="text-red-500 mb-4">{error}</p>} {/* Display error if present */}
         <form onSubmit={handleLogin}> {/* Add form onSubmit handler */}
           <div className="grid gap-4">
             <div className="grid gap-2">
@@ -94,8 +95,12 @@ export function LoginForm() {
                 required
               />
             </div>
-            <Button type="submit" className="w-full">
-              Login
+            <Button
+              type="submit"
+              className={`w-full ${loading ? "bg-gray-400" : "text-primary-foreground"}`} 
+              disabled={loading} // Disable the button while loading
+            >
+              {loading ? "Loading..." : "Login"}
             </Button>
             <Button variant="outline" className="w-full">
               Login with Google

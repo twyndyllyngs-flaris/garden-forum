@@ -123,6 +123,7 @@ export function SignupForm() {
                   placeholder="Max"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
+                  minLength={3} // Set the minimum length to 8 characters
                   required
                 />
               </div>
@@ -133,6 +134,7 @@ export function SignupForm() {
                   placeholder="Robinson"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
+                  minLength={3} // Set the minimum length to 8 characters
                   required
                 />
               </div>
@@ -155,6 +157,8 @@ export function SignupForm() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                minLength={8} // Set the minimum length to 8 characters
+                placeholder="At least 8 characters"
                 required
               />
             </div>
