@@ -4,10 +4,12 @@ import '../styling/output.css';
 
 //components
 import Navbar from "../components/navbar/navbar";
+import Guides from "./guides";
 
 function Dashboard() {  return (
-    <div className="flex items-start justify-center min-h-screen">
+    <div className="flex flex-col w-screen h-screen">
         <Navbar />
+        <Guides />
     </div>
   );
 }

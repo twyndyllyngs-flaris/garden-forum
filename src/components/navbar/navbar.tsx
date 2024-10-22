@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Label } from "../ui/label"
 
 function Navbar() {  return (
-    <nav className="w-full h-20 flex justify-center items-center border-b border-gray-300">
+    <nav className="w-full h-20 flex justify-center items-center border-b border-gray-300 sticky">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo or Branding */}
         <div className="text-2xl font-bold">
