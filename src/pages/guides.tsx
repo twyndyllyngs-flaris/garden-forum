@@ -7,7 +7,7 @@ import GuidesSidebar from "../components/sidebar/guides-sidebar";
 import GuidesMain from "../components/main/guides-main";
 
 function Guides() {  return (
-    <div className="w-full h-full flex">
+    <div className="flex flex-1 max-w-full overflow-auto">
         <GuidesSidebar />
         <GuidesMain />
     </div>

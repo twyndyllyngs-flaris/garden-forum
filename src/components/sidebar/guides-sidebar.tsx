@@ -1,6 +1,7 @@
 import { useEffect } from "react"; // Import useState
 import { supabase } from "../../config/supabase/supabaseClient"; // Adjust the import path as needed
 import '../../styling/output.css';
+import 'non.geist'
 
 //components
 import { Input } from "../ui/input";
@@ -19,7 +20,7 @@ import { Separator } from "../ui/seperator"
 
 
 function GuidesSidebar() {  return (
-    <div className="w-[300px] h-full bg-gray-50 border-r border-gray-300 sticky p-6">
+    <div className="w-[300px] min-w-[300px] h-full bg-gray-50 border-r border-gray-300 sticky top-0 p-6">
         <div className="text-xl font-bold text-gray-800">
           Gardening Guides
         </div>
@@ -27,7 +28,7 @@ function GuidesSidebar() {  return (
         <Separator className="my-6" />
 
         <div className="mt-4 flex flex-col gap-3">
-            <div className="text-gray-800 font-semibold">
+            <div className="text-sm text-gray-700">
                 Filters
             </div>
 
@@ -49,21 +50,24 @@ function GuidesSidebar() {  return (
 
             <div className="flex items-center space-x-2">
                 <Switch id="airplane-mode" />
-                <Label htmlFor="airplane-mode">Ascending</Label>
+                <Label htmlFor="airplane-mode" className="text-gray-700">Ascending</Label>
             </div>
         </div>
 
         <Separator className="my-6" />
 
-        <div className="mt-4 flex flex-col gap-2">
-            <div className="text-gray-800 font-semibold">
+        <div className="mt-4 flex flex-col gap-3">
+            <div className="text-sm text-gray-700">
                 Categories
             </div>
 
-            <div className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer font-normal"> Category1</div>
-            <div className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer "> Category2</div>
-            <div className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer "> Category3</div>
-            <div className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer "> Category4</div>
+            <div className="flex flex-col gap-1">
+                <Label htmlFor="airplane-mode" className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">Category 1</Label>
+                <Label htmlFor="airplane-mode" className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">Category 2</Label>
+                <Label htmlFor="airplane-mode" className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">Category 3</Label>
+                <Label htmlFor="airplane-mode" className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">Category 4</Label>
+                <Label htmlFor="airplane-mode" className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">Category 5</Label>
+            </div>
         </div>
     </div>
   );
