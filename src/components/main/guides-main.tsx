@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../../config/supabase/supabaseClient"; // Adjust the import path as needed
 import { Link } from "react-router-dom"; // Import Link
 import '../../styling/output.css';
@@ -14,6 +14,7 @@ import {
     CardTitle,
 } from "../ui/card";
 import { Separator } from "../ui/seperator";
+import PlantDrawer from "../drawer/plant-drawer";
 
 // objects
 interface Item {
@@ -21,7 +22,6 @@ interface Item {
     description: string;
     link?: string; // Optional link field
 }
-
 interface Category {
     [categoryName: string]: Item[];
 }
@@ -96,8 +96,22 @@ const categories: Category = {
 };
 
 function GuidesMain() {
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false); 
+    const [plantData, setPlantData] = useState<Item|null>(null); 
+
+    const openDrawer = (item : Item): void => {
+        setIsDrawerOpen(true);
+        setPlantData(item)
+    }
+
+    const closeDrawer = ():void => {
+        setIsDrawerOpen(false)
+    }
+
     return (
         <div className="flex-1 h-fit p-10 box-border">
+            <PlantDrawer isDrawerOpen={isDrawerOpen} plantData={plantData} closeDrawer={closeDrawer}/>
+
             <div className="">
                 {Object.entries(categories).map(([categoryName, items], index) => (
                     <div key={categoryName}>
@@ -107,19 +121,17 @@ function GuidesMain() {
                         {/* Cards Grid */}
                         <div className="grid grid-cols-4">
                             {items.map((item, itemIndex) => (
-                                <Link key={itemIndex} to={item.link || "#"}> {/* Using Link for navigation */}
-                                    <Card className="mb-4 w-[350px] hover:shadow-lg transition-shadow">
-                                        <CardHeader>
-                                            <CardTitle className="text-xl text-gray-700">{item.title}</CardTitle>
-                                            <CardDescription>{item.description}</CardDescription>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                                {/* Image placeholder */}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
+                                <Card className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openDrawer(item)}>
+                                    <CardHeader>
+                                        <CardTitle className="text-xl text-gray-700">{item.title}</CardTitle>
+                                        <CardDescription>{item.description}</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                            {/* Image placeholder */}
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             ))}
                         </div>
 
