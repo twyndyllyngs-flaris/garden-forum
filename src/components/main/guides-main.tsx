@@ -121,7 +121,7 @@ function GuidesMain() {
                         {/* Cards Grid */}
                         <div className="grid grid-cols-4">
                             {items.map((item, itemIndex) => (
-                                <Card className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openDrawer(item)}>
+                                <Card key={itemIndex} className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openDrawer(item)}>
                                     <CardHeader>
                                         <CardTitle className="text-xl text-gray-700">{item.title}</CardTitle>
                                         <CardDescription>{item.description}</CardDescription>

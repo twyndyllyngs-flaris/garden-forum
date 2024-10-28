@@ -71,17 +71,21 @@ const steps = [
 function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps) {
   const [activeStep, setActiveStep] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = ():void => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
-  const handleBack = () => {
+  const handleBack = ():void => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleReset = () => {
+  const handleReset = ():void => {
     setActiveStep(0);
   };
+
+  useEffect(() => {
+    handleReset();
+  }, [isDrawerOpen]);
      
     return (
         <div className="">
@@ -115,8 +119,8 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                             }}
                             className="w-full"
                             >
-                            <CarouselContent className="">
-                                {Array.from({ length: 5 }).map((_, index) => (
+                            <CarouselContent className="w-[80%] h-full">
+                                {Array.from({ length: 6 }).map((_, index) => (
                                 <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
                                     <div className="p-1">
                                     {/* Placeholder image */}
@@ -132,34 +136,8 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                             <CarouselNext />
                         </Carousel>
                     </div>
-
-                    <div className="w-[75%] m-auto mt-[100px]">
-                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Frequently Asked Questions </div> 
-                        <Accordion type="single" collapsible className="text-gray-700">
-                            <AccordionItem value="item-1">
-                                <AccordionTrigger>Is it accessible?</AccordionTrigger>
-                                <AccordionContent>
-                                Yes. It adheres to the WAI-ARIA design pattern.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-2">
-                                <AccordionTrigger>Is it styled?</AccordionTrigger>
-                                <AccordionContent>
-                                Yes. It comes with default styles that matches the other
-                                components&apos; aesthetic.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-3">
-                                <AccordionTrigger>Is it animated?</AccordionTrigger>
-                                <AccordionContent>
-                                Yes. It&apos;s animated by default, but you can disable it if you
-                                prefer.
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
-                    </div>
                     
-                    <div className="w-[75%] m-auto mt-[100px]">
+                    <div className="w-[75%] m-auto mt-[75px]">
                         <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Steps to follow </div> 
                         <Box sx={{ maxWidth: 1200 }}>
                             <Stepper
@@ -242,7 +220,32 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                                 </Button>
                             )}
                         </Box>
-
+                    </div>
+     
+                    <div className="w-[75%] m-auto mt-[75px]">
+                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Frequently Asked Questions </div> 
+                        <Accordion type="single" collapsible className="text-gray-700">
+                            <AccordionItem value="item-1">
+                                <AccordionTrigger className="text-lg">Is it accessible?</AccordionTrigger>
+                                <AccordionContent>
+                                Yes. It adheres to the WAI-ARIA design pattern.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-2">
+                                <AccordionTrigger className="text-lg">Is it styled?</AccordionTrigger>
+                                <AccordionContent>
+                                Yes. It comes with default styles that matches the other
+                                components&apos; aesthetic.
+                                </AccordionContent>
+                            </AccordionItem>
+                            <AccordionItem value="item-3">
+                                <AccordionTrigger className="text-lg">Is it animated?</AccordionTrigger>
+                                <AccordionContent>
+                                Yes. It&apos;s animated by default, but you can disable it if you
+                                prefer.
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     </div>
                 </SheetContent>
             </Sheet>
