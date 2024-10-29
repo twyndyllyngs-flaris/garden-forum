@@ -37,16 +37,22 @@ import Typography from '@mui/material/Typography';
   
 
 // objects
-interface Item {
-    title: string;
-    description: string;
-    link?: string; // Optional link field
+interface Plant {
+    plant_id: string; // Assuming plant_id is a string type
+    plant_category_id: number; // Assuming plant_category_id is a number
+    plant_name: string;
+    description_short: string;
+    description_long: string;
+    steps: { [key: string]: string }; // Adjust as per your actual data type
+    faq: { [key: string]: string }; // Adjust as per your actual data type
+    images_links: string[]; // Assuming images_links is an array of strings
 }
 type MyComponentProps = {
     isDrawerOpen: boolean;
-    plantData: Item | null;
+    plantData: Plant | null;
     closeDrawer: () => void
 };
+
 const steps = [
   {
     label: 'Select campaign settings',
@@ -83,6 +89,12 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
     setActiveStep(0);
   };
 
+  // Using steps from the plantData object
+  const stepsArray = Object.entries(plantData?.steps || {}).map(([key, value]) => ({
+    label: key,
+    description: value,
+  }));
+
   useEffect(() => {
     handleReset();
   }, [isDrawerOpen]);
@@ -95,7 +107,7 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                     <div className=" h-[70px] flex justify-center items-center sticky top-0 bg-white border-b border-gray-300 z-50">
                         <Button variant="outline" className="self-center" onClick={closeDrawer}>Close</Button>
                         <div className="flex-1 text-center font-bold text-2xl text-gray-700">
-                            {plantData?.title}
+                            {plantData?.plant_name}
                         </div>
                     </div>
                     
@@ -103,14 +115,15 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                     <div className="w-[75%] max-w-[75%] m-auto mt-[50px]">
                         <div className="w-full flex justify-between items-center gap-28">
                             <div className="w-[60%] text-md text-center leading-[2.5rem] text-gray-600">
-                                Lorem ipsum dolor sit amet, consectetur adipisicing elit. Ipsam eveniet minus, architecto exercitationem voluptatem ea maiores qui deserunt, nobis sunt dolor dicta et laboriosam minima quo reiciendis rerum quos nihil dolorum! Illo perferendis enim dignissimos accusantium! Vitae obcaecati ex, deleniti sequi minus distinctio esse odio impedit ad placeat nihil exercitationem voluptatum eius veniam autem iste atque, ipsa hic, dolor recusandae sed quis consequatur? Ipsum dolore dicta ducimus odio nisi, sapiente porro, nemo corrupti enim aspernatur eius impedit tenetur minima repellendus vel fuga commodi laboriosam consequatur eligendi iure. Amet numquam ab voluptatem quidem reprehenderit laborum qui enim sequi maiores, et cum?
+                                {plantData?.description_long}
                             </div>
-                            <div className="w-[40%] h-[500px] bg-gray-200">
-                                {/* Image placeholder */}
+                            <div className="w-[40%] h-[500px] bg-gray-200 rounded">
+                                <img src={plantData?.images_links[0]} alt={plantData?.plant_name} className="w-full h-full object-cover rounded" />
                             </div>
                         </div>
                     </div>
 
+                     {/* this div
                     <div className="w-[75%] max-w-[75%] m-auto mt-[100px]">
                         <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Other images </div> 
                         <Carousel
@@ -118,18 +131,51 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                                 align: "start",
                             }}
                             className="w-full"
-                            >
+                        >
                             <CarouselContent className="w-[80%] h-full">
-                                {Array.from({ length: 6 }).map((_, index) => (
-                                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
-                                    <div className="p-1">
-                                    {/* Placeholder image */}
-                                    <img
-                                        src={`https://placehold.co/400`}
-                                        className="w-full aspect-square object-cover rounded-lg"
-                                    />
-                                    </div>
-                                </CarouselItem>
+                                {plantData?.images_links
+                                    ?.filter((link) => !link.endsWith('0.jpg')) // Filter out 0.jpg
+                                    .map((imageLink, index) => (
+                                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
+                                            <div className="p-1">
+                                                <img
+                                                    src={imageLink}
+                                                    alt={`Plant image ${index + 1}`} // Provide alt text for accessibility
+                                                    className="w-full aspect-square object-cover rounded-lg"
+                                                />
+                                            </div>
+                                        </CarouselItem>
+                                    ))}
+                            </CarouselContent>
+                            <CarouselPrevious />
+                            <CarouselNext />
+                        </Carousel>
+                    </div> */}
+                    
+                    
+                    <div className="w-[75%] max-w-[75%] m-auto mt-[100px]">
+                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Other images </div> 
+                        <Carousel
+                            opts={{
+                                align: "start",
+                            }}
+                            className="w-full"
+                        >
+                            <CarouselContent className="w-[80%] h-full">
+                                {Array.from({ length: 2 }).flatMap(() => // Iterate twice
+                                    plantData?.images_links
+                                        ?.filter((link) => !link.endsWith('0.jpg')) // Filter out 0.jpg
+                                        .slice(0, 4) // Get the first 4 images (1.jpg to 4.jpg)
+                                ).map((imageLink, index) => (
+                                    <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
+                                        <div className="p-1">
+                                            <img
+                                                src={imageLink}
+                                                alt={`Plant image ${index + 1}`} // Provide alt text for accessibility
+                                                className="w-full aspect-square object-cover rounded-lg"
+                                            />
+                                        </div>
+                                    </CarouselItem>
                                 ))}
                             </CarouselContent>
                             <CarouselPrevious />
@@ -138,7 +184,7 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                     </div>
                     
                     <div className="w-[75%] m-auto mt-[75px]">
-                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Steps to follow </div> 
+                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Steps to follow </div>
                         <Box sx={{ maxWidth: 1200 }}>
                             <Stepper
                                 activeStep={activeStep}
@@ -147,52 +193,52 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                                     "& .MuiStepIcon-root": {
                                         width: 32,
                                         height: 32,
-                                        color: "gray.200", // Gray background for inactive step circles
+                                        color: "gray.200",
                                         "&.Mui-active": {
-                                            color: "primary.main", // Default MUI primary color for active steps
+                                            color: "primary.main",
                                         },
                                     },
                                 }}
                             >
-                                {steps.map((step, index) => (
-                                    <Step 
+                                {stepsArray.map((step, index) => (
+                                    <Step
                                         key={step.label}
                                         sx={{
                                             '& .MuiStepLabel-root .Mui-completed': {
-                                              color: 'rgb(75 85 99)', // circle color (COMPLETED)
+                                                color: 'rgb(75 85 99)',
                                             },
                                             '& .MuiStepLabel-label.Mui-completed.MuiStepLabel-alternativeLabel':
-                                              {
-                                                color: 'grey.500', // Just text label (COMPLETED)
-                                              },
+                                                {
+                                                    color: 'grey.500',
+                                                },
                                             '& .MuiStepLabel-root .Mui-active': {
-                                              color: 'rgb(75 85 99)', // circle color (ACTIVE)
+                                                color: 'rgb(75 85 99)',
                                             },
                                             '& .MuiStepLabel-label.Mui-active.MuiStepLabel-alternativeLabel':
-                                              {
-                                                color: 'white', // Just text label (ACTIVE)
-                                              },
+                                                {
+                                                    color: 'white',
+                                                },
                                             '& .MuiStepLabel-root .Mui-active .MuiStepIcon-text': {
-                                              fill: 'white', // circle's number (ACTIVE)
+                                                fill: 'white',
                                             },
-                                          }}
+                                        }}
                                     >
                                         <StepLabel
                                             optional={
-                                                index === steps.length - 1 ? (
+                                                index === stepsArray.length - 1 ? (
                                                     <Typography variant="caption" sx={{ fontSize: "1rem", color: "rgb(55,65,81)" }}>
                                                         Last step
                                                     </Typography>
                                                 ) : null
                                             }
                                             sx={{
-                                                "& .MuiStepLabel-label": { fontSize: "1.25rem", color: "rgb(55,65,81)" }, // Title as text-xl, gray-700 color
+                                                "& .MuiStepLabel-label": { fontSize: "1.25rem", color: "rgb(55,65,81)" },
                                             }}
                                         >
                                             {step.label}
                                         </StepLabel>
                                         <StepContent>
-                                            <Typography sx={{ fontSize: "1rem", color: "rgb(55,65,81)" }}> {/* Description as text-lg */}
+                                            <Typography sx={{ fontSize: "1rem", color: "rgb(55,65,81)" }}>
                                                 {step.description}
                                             </Typography>
                                             <Box sx={{ mb: 2 }}>
@@ -200,7 +246,7 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                                                     className="bg-gray-700 mt-3 mr-3"
                                                     onClick={handleNext}
                                                 >
-                                                    {index === steps.length - 1 ? 'Finish' : 'Continue'}
+                                                    {index === stepsArray.length - 1 ? 'Finish' : 'Continue'}
                                                 </Button>
                                                 <Button
                                                     variant="outline"
@@ -214,7 +260,7 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                                     </Step>
                                 ))}
                             </Stepper>
-                            {activeStep === steps.length && (
+                            {activeStep === stepsArray.length && (
                                 <Button onClick={handleReset} variant="outline">
                                     Reset
                                 </Button>
@@ -222,29 +268,16 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                         </Box>
                     </div>
      
+                    {/* Frequently Asked Questions */}
                     <div className="w-[75%] m-auto mt-[75px]">
-                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Frequently Asked Questions </div> 
+                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Frequently Asked Questions </div>
                         <Accordion type="single" collapsible className="text-gray-700">
-                            <AccordionItem value="item-1">
-                                <AccordionTrigger className="text-lg">Is it accessible?</AccordionTrigger>
-                                <AccordionContent>
-                                Yes. It adheres to the WAI-ARIA design pattern.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-2">
-                                <AccordionTrigger className="text-lg">Is it styled?</AccordionTrigger>
-                                <AccordionContent>
-                                Yes. It comes with default styles that matches the other
-                                components&apos; aesthetic.
-                                </AccordionContent>
-                            </AccordionItem>
-                            <AccordionItem value="item-3">
-                                <AccordionTrigger className="text-lg">Is it animated?</AccordionTrigger>
-                                <AccordionContent>
-                                Yes. It&apos;s animated by default, but you can disable it if you
-                                prefer.
-                                </AccordionContent>
-                            </AccordionItem>
+                            {plantData?.faq && Object.entries(plantData.faq).map(([question, answer], index) => (
+                                <AccordionItem key={index} value={`item-${index}`}>
+                                    <AccordionTrigger className="text-lg">{question}</AccordionTrigger>
+                                    <AccordionContent>{answer}</AccordionContent>
+                                </AccordionItem>
+                            ))}
                         </Accordion>
                     </div>
                 </SheetContent>

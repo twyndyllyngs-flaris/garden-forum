@@ -15,120 +15,81 @@ import {
 } from "../ui/card";
 import { Separator } from "../ui/seperator";
 import PlantDrawer from "../drawer/plant-drawer";
+import { Box, Step, StepLabel, Stepper } from "@mui/material"; // Import MUI components
 
 // objects
-interface Item {
-    title: string;
-    description: string;
-    link?: string; // Optional link field
+interface Plant {
+    plant_id: string; // Assuming plant_id is a string type
+    plant_category_id: number; // Assuming plant_category_id is a number
+    plant_name: string;
+    description_short: string;
+    description_long: string;
+    steps: { [key: string]: string }; // Adjust as per your actual data type
+    faq: { [key: string]: string }; // Adjust as per your actual data type
+    images_links: string[]; // Assuming images_links is an array of strings
 }
-interface Category {
-    [categoryName: string]: Item[];
-}
-
-const categories: Category = {
-    "Category 1": [
-        {
-            title: "Item 1",
-            description: "This is the first item in Category 1.",
-            link: "/category1/item1", // Replace with actual route
-        },
-        {
-            title: "Item 2",
-            description: "This is the second item in Category 1.",
-            link: "/category1/item2",
-        },
-        {
-            title: "Item 3",
-            description: "This is the third item in Category 1.",
-            link: "/category1/item3",
-        },
-        {
-            title: "Item 4",
-            description: "This is the fourth item in Category 1.",
-            link: "/category1/item4",
-        },
-    ],
-    "Category 2": [
-        {
-            title: "Item 1",
-            description: "This is the first item in Category 2.",
-            link: "/category2/item1",
-        },
-        {
-            title: "Item 2",
-            description: "This is the second item in Category 2.",
-            link: "/category2/item2",
-        },
-        {
-            title: "Item 3",
-            description: "This is the third item in Category 2.",
-            link: "/category2/item3",
-        },
-        {
-            title: "Item 4",
-            description: "This is the fourth item in Category 2.",
-            link: "/category2/item4",
-        },
-    ],
-    "Category 3": [
-        {
-            title: "Item 1",
-            description: "This is the first item in Category 3.",
-            link: "/category3/item1",
-        },
-        {
-            title: "Item 2",
-            description: "This is the second item in Category 3.",
-            link: "/category3/item2",
-        },
-        {
-            title: "Item 3",
-            description: "This is the third item in Category 3.",
-            link: "/category3/item3",
-        },
-        {
-            title: "Item 4",
-            description: "This is the fourth item in Category 3.",
-            link: "/category3/item4",
-        },
-    ],
-};
 
 function GuidesMain() {
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false); 
-    const [plantData, setPlantData] = useState<Item|null>(null); 
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [plants, setPlants] = useState<Plant[]>([]);
+    const [plantData, setPlantData] = useState<Plant | null>(null);
 
-    const openDrawer = (item : Item): void => {
+    const fetchPlants = async () => {
+        const { data, error } = await supabase
+            .from("plants")
+            .select("*"); // Fetch all columns from the plants table
+
+        if (error) {
+            console.error("Error fetching plants:", error);
+        } else {
+            setPlants(data);
+        }
+    };
+
+    useEffect(() => {
+        fetchPlants();
+    }, []);
+
+    const openDrawer = (plant: Plant): void => {
         setIsDrawerOpen(true);
-        setPlantData(item)
-    }
+        setPlantData(plant);
+    };
 
-    const closeDrawer = ():void => {
-        setIsDrawerOpen(false)
-    }
+    const closeDrawer = (): void => {
+        setIsDrawerOpen(false);
+    };
+
+    // Group plants by category
+    const groupedPlants = plants.reduce((acc: { [key: number]: Plant[] }, plant) => {
+        const categoryId = plant.plant_category_id;
+        if (!acc[categoryId]) {
+            acc[categoryId] = [];
+        }
+        acc[categoryId].push(plant);
+        return acc;
+    }, {});
 
     return (
         <div className="flex-1 h-fit p-10 box-border">
-            <PlantDrawer isDrawerOpen={isDrawerOpen} plantData={plantData} closeDrawer={closeDrawer}/>
+            <PlantDrawer isDrawerOpen={isDrawerOpen} plantData={plantData} closeDrawer={closeDrawer} />
 
             <div className="">
-                {Object.entries(categories).map(([categoryName, items], index) => (
-                    <div key={categoryName}>
+                {Object.entries(groupedPlants).map(([categoryId, plantsInCategory]) => (
+                    <div key={categoryId}>
                         {/* Category Title */}
-                        <h2 className="text-md mb-6 text-gray-600">{categoryName}</h2>
+                        <h2 className="text-md mb-6 text-gray-600">Category {categoryId}</h2>
 
                         {/* Cards Grid */}
                         <div className="grid grid-cols-4">
-                            {items.map((item, itemIndex) => (
-                                <Card key={itemIndex} className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openDrawer(item)}>
+                            {plantsInCategory.map((plant) => (
+                                <Card key={plant.plant_id} className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openDrawer(plant)}>
                                     <CardHeader>
-                                        <CardTitle className="text-xl text-gray-700">{item.title}</CardTitle>
-                                        <CardDescription>{item.description}</CardDescription>
+                                        <CardTitle className="text-xl text-gray-700">{plant.plant_name}</CardTitle>
+                                        <CardDescription>{plant.description_short}</CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                            {/* Image placeholder */}
+                                            <img src={plant.images_links[0]} alt={plant.plant_name} className="w-full h-full object-cover" />
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -136,9 +97,7 @@ function GuidesMain() {
                         </div>
 
                         {/* Separator */}
-                        {index < Object.entries(categories).length - 1 && (
-                            <Separator className="my-8" />
-                        )}
+                        <Separator className="my-8" />
                     </div>
                 ))}
             </div>
