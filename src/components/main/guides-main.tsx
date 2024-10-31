@@ -1,44 +1,41 @@
 import { useState, useEffect } from "react";
-import { supabase } from "../../config/supabase/supabaseClient"; // Adjust the import path as needed
-import { Link } from "react-router-dom"; // Import Link
+import { supabase } from "../../config/supabase/supabaseClient";
 import '../../styling/output.css';
-import 'non.geist'
+import "non.geist"
 
-// components
+// Components
 import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from "../ui/card";
 import { Separator } from "../ui/seperator";
 import PlantDrawer from "../drawer/plant-drawer";
-import { Box, Step, StepLabel, Stepper } from "@mui/material"; // Import MUI components
 
-// objects
 interface Plant {
-    plant_id: string; // Assuming plant_id is a string type
-    plant_category_id: number; // Assuming plant_category_id is a number
+    plant_id: string;
+    plant_category_id: number;
     plant_name: string;
     description_short: string;
     description_long: string;
-    steps: { [key: string]: string }; // Adjust as per your actual data type
-    faq: { [key: string]: string }; // Adjust as per your actual data type
-    images_links: string[]; // Assuming images_links is an array of strings
+    steps: { [key: string]: string };
+    faq: { [key: string]: string };
+    images_links: string[];
 }
 
-function GuidesMain() {
+interface GuidesMainProps {
+    searchTerm: string;
+}
+
+function GuidesMain({ searchTerm }: GuidesMainProps) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [plants, setPlants] = useState<Plant[]>([]);
     const [plantData, setPlantData] = useState<Plant | null>(null);
 
     const fetchPlants = async () => {
-        const { data, error } = await supabase
-            .from("plants")
-            .select("*"); // Fetch all columns from the plants table
-
+        const { data, error } = await supabase.from("plants").select("*");
         if (error) {
             console.error("Error fetching plants:", error);
         } else {
@@ -59,8 +56,11 @@ function GuidesMain() {
         setIsDrawerOpen(false);
     };
 
-    // Group plants by category
-    const groupedPlants = plants.reduce((acc: { [key: number]: Plant[] }, plant) => {
+    const filteredPlants = plants.filter((plant) =>
+        plant.plant_name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const groupedPlants = filteredPlants.reduce((acc: { [key: number]: Plant[] }, plant) => {
         const categoryId = plant.plant_category_id;
         if (!acc[categoryId]) {
             acc[categoryId] = [];
@@ -73,34 +73,35 @@ function GuidesMain() {
         <div className="flex-1 h-fit p-10 box-border">
             <PlantDrawer isDrawerOpen={isDrawerOpen} plantData={plantData} closeDrawer={closeDrawer} />
 
-            <div className="">
-                {Object.entries(groupedPlants).map(([categoryId, plantsInCategory]) => (
-                    <div key={categoryId}>
-                        {/* Category Title */}
-                        <h2 className="text-md mb-6 text-gray-600">Category {categoryId}</h2>
-
-                        {/* Cards Grid */}
-                        <div className="grid grid-cols-4">
-                            {plantsInCategory.map((plant) => (
-                                <Card key={plant.plant_id} className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer" onClick={() => openDrawer(plant)}>
-                                    <CardHeader>
-                                        <CardTitle className="text-xl text-gray-700">{plant.plant_name}</CardTitle>
-                                        <CardDescription>{plant.description_short}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                            <img src={plant.images_links[0]} alt={plant.plant_name} className="w-full h-full object-cover" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-
-                        {/* Separator */}
-                        <Separator className="my-8" />
+            {Object.entries(groupedPlants).map(([categoryId, plantsInCategory]) => (
+                <div key={categoryId}>
+                    <h2 className="text-md mb-6 text-gray-600">Category {categoryId}</h2>
+                    <div className="grid grid-cols-4 gap-4">
+                        {plantsInCategory.map((plant) => (
+                            <Card
+                                key={plant.plant_id}
+                                className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer"
+                                onClick={() => openDrawer(plant)}
+                            >
+                                <CardHeader>
+                                    <CardTitle className="text-xl text-gray-700">{plant.plant_name}</CardTitle>
+                                    <CardDescription>{plant.description_short}</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                        <img
+                                            src={plant.images_links[0]}
+                                            alt={plant.plant_name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
-                ))}
-            </div>
+                    <Separator className="my-8" />
+                </div>
+            ))}
         </div>
     );
 }
