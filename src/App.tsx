@@ -5,6 +5,9 @@ import './styling/output.css';
 import Login from './pages/login';
 import Signup from './pages/signup';
 import Dashboard from './pages/dashboard';
+import Forum from './pages/forum';
+import Faq from './pages/faq';
+import Profile from './pages/profile';
 
 function App() {
 
@@ -14,6 +17,10 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/guides" element={<Dashboard />} />
+      <Route path="/forum" element={<Forum />} />
+      <Route path="/faq" element={<Faq />} />
+      <Route path="/profile" element={<Profile />} />
+      <Route path="/settings" element={<Profile />} />
     </Routes>
   );
 }

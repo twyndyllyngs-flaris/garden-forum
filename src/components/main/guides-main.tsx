@@ -27,9 +27,11 @@ interface Plant {
 
 interface GuidesMainProps {
     searchTerm: string;
+    sortBy: "name" | "category";
+    isAscending: boolean; // Prop for sort order
 }
 
-function GuidesMain({ searchTerm }: GuidesMainProps) {
+function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [plants, setPlants] = useState<Plant[]>([]);
     const [plantData, setPlantData] = useState<Plant | null>(null);
@@ -56,10 +58,25 @@ function GuidesMain({ searchTerm }: GuidesMainProps) {
         setIsDrawerOpen(false);
     };
 
-    const filteredPlants = plants.filter((plant) =>
-        plant.plant_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Filter and sort plants based on searchTerm, sortBy, and isAscending
+    const filteredPlants = plants
+        .filter((plant) =>
+            plant.plant_name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (sortBy === "name") {
+                return isAscending 
+                    ? a.plant_name.localeCompare(b.plant_name) 
+                    : b.plant_name.localeCompare(a.plant_name);
+            } else if (sortBy === "category") {
+                return isAscending 
+                    ? a.plant_category_id - b.plant_category_id 
+                    : b.plant_category_id - a.plant_category_id;
+            }
+            return 0;
+        });
 
+    // Group plants by category
     const groupedPlants = filteredPlants.reduce((acc: { [key: number]: Plant[] }, plant) => {
         const categoryId = plant.plant_category_id;
         if (!acc[categoryId]) {
@@ -69,15 +86,25 @@ function GuidesMain({ searchTerm }: GuidesMainProps) {
         return acc;
     }, {});
 
+    // Sort categories for rendering
+    const sortedCategoryIds = Object.keys(groupedPlants)
+        .map(Number) // Convert keys to numbers
+        .sort((a, b) => {
+            // If sorting by name, always sort categories in ascending order
+            if (sortBy === "name") {
+                return a - b; // Ascending order
+            }
+            return isAscending ? a - b : b - a; // For category sorting
+        });
+
     return (
         <div className="flex-1 h-fit p-10 box-border">
             <PlantDrawer isDrawerOpen={isDrawerOpen} plantData={plantData} closeDrawer={closeDrawer} />
-
-            {Object.entries(groupedPlants).map(([categoryId, plantsInCategory]) => (
+            {sortedCategoryIds.map((categoryId) => (
                 <div key={categoryId}>
                     <h2 className="text-md mb-6 text-gray-600">Category {categoryId}</h2>
                     <div className="grid grid-cols-4 gap-4">
-                        {plantsInCategory.map((plant) => (
+                        {groupedPlants[categoryId].map((plant) => (
                             <Card
                                 key={plant.plant_id}
                                 className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer"

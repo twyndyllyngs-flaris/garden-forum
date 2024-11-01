@@ -19,9 +19,11 @@ import { Separator } from "../ui/seperator";
 
 interface GuidesSidebarProps {
     setSearchTerm: Dispatch<SetStateAction<string>>;
+    setSortBy: Dispatch<SetStateAction<"name" | "category">>;
+    setIsAscending: Dispatch<SetStateAction<boolean>>; // New prop for sort order
 }
 
-function GuidesSidebar({ setSearchTerm }: GuidesSidebarProps) {
+function GuidesSidebar({ setSearchTerm, setSortBy, setIsAscending }: GuidesSidebarProps) {
     return (
         <div className="w-[300px] min-w-[300px] h-full bg-gray-50 border-r border-gray-300 sticky top-0 p-6">
             <div className="text-xl font-bold text-gray-800">
@@ -39,22 +41,25 @@ function GuidesSidebar({ setSearchTerm }: GuidesSidebarProps) {
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
 
-                <Select>
+                <Select defaultValue="name" onValueChange={(value) => setSortBy(value as "name" | "category")}>
                     <SelectTrigger className="rounded-full">
                         <SelectValue placeholder="Sort by" className="placeholder:text-white font-bold" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
                             <SelectLabel>Sort by</SelectLabel>
-                            <SelectItem value="Name">Name</SelectItem>
-                            <SelectItem value="Category">Category</SelectItem>
-                            <SelectItem value="Environment">Environment</SelectItem>
+                            <SelectItem value="name">Name</SelectItem>
+                            <SelectItem value="category">Category</SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>
 
                 <div className="flex items-center space-x-2">
-                    <Switch id="airplane-mode" />
+                    <Switch
+                        id="airplane-mode"
+                        defaultChecked // Set switch to default checked (ascending)
+                        onCheckedChange={(checked) => setIsAscending(checked)} // Update state based on switch
+                    />
                     <Label htmlFor="airplane-mode" className="text-gray-700">Ascending</Label>
                 </div>
             </div>
@@ -73,12 +78,6 @@ function GuidesSidebar({ setSearchTerm }: GuidesSidebarProps) {
                     </Label>
                     <Label className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">
                         Category 3
-                    </Label>
-                    <Label className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">
-                        Category 4
-                    </Label>
-                    <Label className="rounded-xl hover:bg-gray-100 py-2 px-4 text-[.9rem] text-gray-700 cursor-pointer">
-                        Category 5
                     </Label>
                 </div>
             </div>
