@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../config/supabase/supabaseClient";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import '../../styling/output.css';
 import "non.geist"
 
@@ -32,6 +33,10 @@ interface GuidesMainProps {
 }
 
 function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
+    const { category, plant } = useParams(); // Get category and plant from URL
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [plants, setPlants] = useState<Plant[]>([]);
     const [plantData, setPlantData] = useState<Plant | null>(null);
@@ -49,14 +54,33 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
         fetchPlants();
     }, []);
 
+    // Open the drawer and update the URL when a plant card is clicked
     const openDrawer = (plant: Plant): void => {
         setIsDrawerOpen(true);
         setPlantData(plant);
+        window.history.pushState({}, "", `/guides/${plant.plant_category_id}/${plant.plant_name}`);
     };
 
+    // Close the drawer and reset the URL back to "/guides"
     const closeDrawer = (): void => {
         setIsDrawerOpen(false);
+        navigate("/guides");
     };
+
+    // Open the drawer if URL parameters match a plant
+    useEffect(() => {
+        if (category && plant && plants.length > 0) {
+            const matchingPlant = plants.find(
+                (p) => p.plant_category_id === parseInt(category) && p.plant_name === plant
+            );
+            if (matchingPlant) {
+                setPlantData(matchingPlant);
+                setIsDrawerOpen(true);
+            }else{
+                navigate("/guides");
+            }
+        }
+    }, [category, plant, plants]);
 
     // Filter and sort plants based on searchTerm, sortBy, and isAscending
     const filteredPlants = plants
