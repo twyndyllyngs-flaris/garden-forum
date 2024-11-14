@@ -12,7 +12,7 @@ function Guides() {
     const [isAscending, setIsAscending] = useState(true); // State for sort order
 
     return (
-        <div className="flex flex-1 max-w-full overflow-auto">
+        <div className="flex flex-1 max-w-full overflow-auto h-full">
             <GuidesSidebar 
                 setSearchTerm={setSearchTerm} 
                 setSortBy={setSortBy} 

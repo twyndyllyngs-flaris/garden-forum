@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../config/supabase/supabaseClient";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { User } from "@supabase/supabase-js"; // Import the User type
 import '../../styling/output.css';
 
@@ -25,13 +25,16 @@ import { Button } from "../ui/button"; // Import ShadCN Button
 
 function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<User | null>(null); // Set user type to User or null
+  const [loading, setLoading] = useState(true); // Loading state
 
   useEffect(() => {
     // Check if user is logged in on component mount
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user); // user can be either User object or null
+      setLoading(false); // Set loading to false after fetching
     };
   
     fetchUser();
@@ -39,6 +42,7 @@ function Navbar() {
     // Set up a listener to detect changes in authentication state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
+      setLoading(false); // Update loading state
     });
   
     // Clean up the listener on component unmount
@@ -67,24 +71,43 @@ function Navbar() {
 
         {/* Navbar links */}
         <div className="flex space-x-4 text-md text-gray-500">
-          <Link to="/guides" className="hover:text-gray-700 px-3 py-2 rounded-md font-medium text-gray-700">
+          <Link
+            to="/guides"
+            className={`hover:text-gray-700 px-3 py-2 rounded-md font-medium ${location.pathname === "/guides" ? "text-gray-700" : ""}`}
+          >
             Guides
           </Link>
-          <Link to="/forum" className="hover:text-gray-700 px-3 py-2 rounded-md font-medium">
+          <Link
+            to="/forum"
+            className={`hover:text-gray-700 px-3 py-2 rounded-md font-medium ${location.pathname === "/forum" ? "text-gray-700" : ""}`}
+          >
             Forum
           </Link>
-          <Link to="/faq" className="hover:text-gray-700 px-3 py-2 rounded-md font-medium">
+          <Link
+            to="/faq"
+            className={`hover:text-gray-700 px-3 py-2 rounded-md font-medium ${location.pathname === "/faq" ? "text-gray-700" : ""}`}
+          >
             FAQ
           </Link>
         </div>
 
-        {/* Profile or Sign In */}
-        {user ? (
+        {/* Profile or Loading Avatar */}
+        {loading ? (
+          <div className="flex justify-center items-center gap-3 cursor-pointer">
+                <Label htmlFor="" className="text-md text-gray-700 cursor-pointer">
+                  user
+                </Label>
+                <Avatar>
+                  <AvatarImage src="https://github.com/shadcn.png" />
+                  <AvatarFallback>CN</AvatarFallback>
+                </Avatar>
+              </div>
+        ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex justify-center items-center gap-3 cursor-pointer">
                 <Label htmlFor="" className="text-md text-gray-700 cursor-pointer">
-                  {user.user_metadata.full_name || "Ralph Matthew De Leon"}
+                  {user.user_metadata.displayName || "User"}
                 </Label>
                 <Avatar>
                   <AvatarImage src="https://github.com/shadcn.png" />
@@ -116,7 +139,6 @@ function Navbar() {
           <Button
             onClick={() => navigate("/login")}
             variant="default"
-            className=""
           >
             Sign In
           </Button>
