@@ -18,14 +18,19 @@ import { Switch } from "../ui/switch";
 import { Separator } from "../ui/seperator";
 import { Button } from "../ui/button";
 
-function ForumsSidebar() {
+type MyComponentProps = {
+    openCreateSpace: () => void
+    closeCreateSpace: () => void
+};
+
+function ForumsSidebar({ openCreateSpace, closeCreateSpace }: MyComponentProps) {
     return (
         <div className="w-[250px] h-full border-r border-gray-300 p-6 sticky top-16">
             <div className="text-xl font-bold text-gray-800">
                 Forums
             </div>
 
-            <Button className="mt-3"> + Create Space </Button>
+            <Button className="mt-3" onClick={openCreateSpace}> + Create Space </Button>
 
             <Separator className="my-6" />
 

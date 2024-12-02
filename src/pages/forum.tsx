@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../config/supabase/supabaseClient";
+import { useNavigate } from "react-router-dom";
 import "../styling/output.css";
 import "non.geist";
 
@@ -15,6 +16,22 @@ import {
 } from "../components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 import { Label } from "../components/ui/label";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "../components/ui/alert-dialog"
+import { Input } from "../components/ui/input"
+import { Textarea } from "../components/ui/text-area"
+import { Separator } from "../components/ui/seperator";
+import { Button } from "../components/ui/button";
+import { ReceiptRussianRuble } from "lucide-react";
 
 interface Forum {
     forum_id: string;
@@ -33,116 +50,60 @@ interface Forum {
 }
 
 function Forum() {
+    const navigate = useNavigate();
+
     const [forums, setForums] = useState<Forum[]>([]);
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
     const [upvoteStates, setUpvoteStates] = useState<Record<string, boolean>>({});
     const [downvoteStates, setDownvoteStates] = useState<Record<string, boolean>>({});
 
+    const [isCreateSpaceOpen, setCreateSpace] = useState(false);
+    const [title, setTitle] = useState("");
+    const [description, setDescription] = useState("");
+    const [imageFiles, setImageFiles] = useState<FileList | null>(null);
+    const [loading, setLoading] = useState(false); // Loading state for the Post button
 
+    const fetchForumsAndProfiles = async () => {
+        const { data: { user } } = await supabase.auth.getUser()
+        const currentUserID = user?.id;
+        console.log(user, currentUserID)
 
-    // useEffect(() => {
-    //     const fetchForumsAndProfiles = async () => {
-    //         try {
-    //             // Fetch forums data
-    //             const { data: forums, error: forumsError } = await supabase
-    //                 .from("forums")
-    //                 .select(`
-    //                     forum_id,
-    //                     uid,
-    //                     title,
-    //                     description,
-    //                     upvotes,
-    //                     downvotes,
-    //                     count_comments,
-    //                     date_created,
-    //                     links_imgs
-    //                 `);
+        try {
+            const { data: forums, error: forumsError } = await supabase
+                .from("forums")
+                .select(`
+                    forum_id,
+                    uid,
+                    title,
+                    description,
+                    upvotes,
+                    downvotes,
+                    count_comments,
+                    date_created,
+                    links_imgs
+                `);
 
-    //             if (forumsError) throw forumsError;
+            if (forumsError) throw forumsError;
 
-    //             const profileIds = forums.map((forum) => forum.uid);
+            const profileIds = forums.map((forum) => forum.uid);
 
-    //             // Fetch profiles data
-    //             const { data: profiles, error: profilesError } = await supabase
-    //                 .from("profiles")
-    //                 .select("uid, first_name, last_name")
-    //                 .in("uid", profileIds);
+            const { data: profiles, error: profilesError } = await supabase
+                .from("profiles")
+                .select("uid, first_name, last_name")
+                .in("uid", profileIds);
 
-    //             if (profilesError) throw profilesError;
+            if (profilesError) throw profilesError;
 
-    //             // Fetch votes data for the current user
-    //             const { data: votes, error: votesError } = await supabase
-    //                 .from("forum_votes")
-    //                 .select("forum_id, vote_type")
-    //                 .eq("uid", "current_user_uid"); // Replace with the actual logged-in user ID
+            const forumsWithProfiles = forums.map((forum) => ({
+                ...forum,
+                profiles: profiles.find((profile) => profile.uid === forum.uid) || null,
+            }));
 
-    //             if (votesError) throw votesError;
+            // Set upvote and downvote states based on initial data
+            const initialUpvoteStates: Record<string, boolean> = {};
+            const initialDownvoteStates: Record<string, boolean> = {};
 
-    //             // Map votes to upvote and downvote states
-    //             const userUpvotes = new Set(votes.filter((vote) => vote.vote_type === "upvote").map((vote) => vote.forum_id));
-    //             const userDownvotes = new Set(votes.filter((vote) => vote.vote_type === "downvote").map((vote) => vote.forum_id));
-
-    //             const forumsWithProfiles = forums.map((forum) => ({
-    //                 ...forum,
-    //                 profiles: profiles.find((profile) => profile.uid === forum.uid) || null,
-    //             }));
-
-    //             // Set upvote and downvote states based on the fetched vote data
-    //             const initialUpvoteStates: Record<string, boolean> = {};
-    //             const initialDownvoteStates: Record<string, boolean> = {};
-
-    //             forumsWithProfiles.forEach((forum) => {
-    //                 initialUpvoteStates[forum.forum_id] = userUpvotes.has(forum.forum_id);
-    //                 initialDownvoteStates[forum.forum_id] = userDownvotes.has(forum.forum_id);
-    //             });
-
-    //             setForums(forumsWithProfiles);
-    //             setUpvoteStates(initialUpvoteStates);
-    //             setDownvoteStates(initialDownvoteStates);
-    //         } catch (error) {
-    //             console.error("Error fetching forums and profiles:", error);
-    //         }
-    //     };
-
-    //     fetchForumsAndProfiles();
-    // }, []);
-
-    useEffect(() => {
-        const fetchForumsAndProfiles = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            const currentUserID = user?.id;
-
-            try {
-                const { data: forums, error: forumsError } = await supabase
-                    .from("forums")
-                    .select(`
-                        forum_id,
-                        uid,
-                        title,
-                        description,
-                        upvotes,
-                        downvotes,
-                        count_comments,
-                        date_created,
-                        links_imgs
-                    `);
-
-                if (forumsError) throw forumsError;
-
-                const profileIds = forums.map((forum) => forum.uid);
-
-                const { data: profiles, error: profilesError } = await supabase
-                    .from("profiles")
-                    .select("uid, first_name, last_name")
-                    .in("uid", profileIds);
-
-                if (profilesError) throw profilesError;
-
-                const forumsWithProfiles = forums.map((forum) => ({
-                    ...forum,
-                    profiles: profiles.find((profile) => profile.uid === forum.uid) || null,
-                }));
-
+            if (currentUserID != undefined) {
                 const { data: currentUserVotes, error } = await supabase
                     .from('forum_votes')
                     .select('*')
@@ -153,11 +114,6 @@ function Forum() {
                     return;
                 }
 
-                // Set upvote and downvote states based on initial data
-                const initialUpvoteStates: Record<string, boolean> = {};
-                const initialDownvoteStates: Record<string, boolean> = {};
-
-             
                 forumsWithProfiles.forEach((forum) => {
                     // Set initial states to false by default
                     initialUpvoteStates[forum.forum_id] = false;
@@ -171,20 +127,27 @@ function Forum() {
                         if (userVote.vote_type === "upvote") {
                             initialUpvoteStates[forum.forum_id] = true;
                         } else if (userVote.vote_type === "downvote") {
-                            initialDownvoteStates[forum.forum_id] = true;                
+                            initialDownvoteStates[forum.forum_id] = true;
                         }
                     }
                 });
-
-                console.log(initialDownvoteStates)
-                setForums(forumsWithProfiles);
-                setUpvoteStates(initialUpvoteStates);
-                setDownvoteStates(initialDownvoteStates);
-            } catch (error) {
-                console.error("Error fetching forums and profiles:", error);
+            } else {
+                forumsWithProfiles.forEach((forum) => {
+                    // Set initial states to false by default
+                    initialUpvoteStates[forum.forum_id] = false;
+                    initialDownvoteStates[forum.forum_id] = false;
+                });
             }
-        };
 
+            setForums(forumsWithProfiles);
+            setUpvoteStates(initialUpvoteStates);
+            setDownvoteStates(initialDownvoteStates);
+        } catch (error) {
+            console.error("Error fetching forums and profiles:", error);
+        }
+    };
+
+    useEffect(() => {
         fetchForumsAndProfiles();
     }, []);
 
@@ -199,6 +162,11 @@ function Forum() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             const currentUserID = user?.id;
+
+            if (currentUserID == undefined) {
+                navigate("/login")
+                return;
+            }
 
             setUpvoteStates((prevState) => ({
                 ...prevState,
@@ -310,6 +278,11 @@ function Forum() {
             const { data: { user } } = await supabase.auth.getUser();
             const currentUserID = user?.id;
 
+            if (currentUserID == undefined) {
+                navigate("/login")
+                return;
+            }
+
             setDownvoteStates((prevState) => ({
                 ...prevState,
                 [forumId]: !prevState[forumId],
@@ -414,9 +387,99 @@ function Forum() {
         }
     };
 
+    const openCreateSpace = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        const currentUserID = user?.id;
+
+        if(currentUserID == undefined){
+            navigate("/login")
+            return;
+        }
+
+        setCreateSpace(true);
+    }
+    
+    const closeCreateSpace = () => setCreateSpace(false);
+
+    const handlePost = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true); // Set loading to true when the post is being created
+
+        try {
+            // Get the current user
+            const { data: { user }, error: userError } = await supabase.auth.getUser();
+            const uid = user?.id;
+
+            // Generate forum_id
+            const forumId = crypto.randomUUID();
+
+            // Step 1: Insert the forum record with an empty image array
+            const { error: insertError } = await supabase.from("forums").insert({
+                forum_id: forumId,
+                uid,
+                title,
+                description,
+                links_imgs: [], // Empty array for now
+            });
+
+            if (insertError) throw insertError;
+
+            // Step 2: Handle image uploads (optional)
+            const imageLinks: string[] = [];
+            if (imageFiles && imageFiles.length > 0) {
+                for (const file of Array.from(imageFiles)) {
+                    const filePath = `${uid}/${forumId}/${file.name}`;
+
+                    // Step 2a: Upload the image to Supabase storage
+                    const { error: uploadError } = await supabase.storage
+                        .from("forums_images")
+                        .upload(filePath, file);
+
+                    if (uploadError) throw uploadError;
+
+                    // Step 2b: Get the public URL of the uploaded image
+                    const { data: publicUrlData } = supabase.storage
+                        .from("forums_images")
+                        .getPublicUrl(filePath);
+
+                    if (publicUrlData?.publicUrl) {
+                        imageLinks.push(publicUrlData.publicUrl); // Add the URL to the imageLinks array
+                    }
+                }
+
+                // Step 3: Update the forum record with image links
+                if (imageLinks.length > 0) {
+                    const { error: updateError } = await supabase
+                        .from("forums")
+                        .update({ links_imgs: imageLinks })
+                        .eq("forum_id", forumId);
+
+                    if (updateError) throw updateError;
+                }
+            }
+
+            setTitle("");
+            setDescription("");
+            setImageFiles(null);
+            setCreateSpace(false); // Close the dialog after the post is created successfully
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                console.error("Error creating post:", error.message);
+                alert(`Failed to create post: ${error.message}`);
+            } else {
+                console.error("Unexpected error:", error);
+                alert("An unexpected error occurred.");
+            }
+        } finally {
+            setLoading(false); // Set loading to false once the process is done
+            fetchForumsAndProfiles();
+        }
+    }
+
     return (
         <div className="flex ml-auto w-[75%] h-full">
-            <ForumsSidebar />
+            <ForumsSidebar openCreateSpace={openCreateSpace} closeCreateSpace={closeCreateSpace} />
+
             <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
                 {forums.map((forum) => {
                     const isUpvoted = upvoteStates[forum.forum_id] || false;
@@ -553,6 +616,26 @@ function Forum() {
                     );
                 })}
             </div>
+
+            <AlertDialog open={isCreateSpaceOpen} onOpenChange={setCreateSpace}>
+                <AlertDialogContent>
+                    <form onSubmit={handlePost}>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle className="flex justify-center mb-2">Create Post</AlertDialogTitle>
+
+                            <Input placeholder="Title" required value={title} onChange={(e) => setTitle(e.target.value)} />
+                            <Textarea placeholder="Type your description here." required value={description} onChange={(e) => setDescription(e.target.value)} />
+                            <Input id="picture" type="file" accept="image/*" onChange={(e) => setImageFiles(e.target.files)} />
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="mt-4">
+                            <AlertDialogCancel onClick={closeCreateSpace}>Cancel</AlertDialogCancel>
+                            <Button type="submit" disabled={loading}> {/* Disable button when loading */}
+                                {loading ? "Posting..." : "Post"} {/* Change text to 'Posting...' when loading */}
+                            </Button>
+                        </AlertDialogFooter>
+                    </form>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
