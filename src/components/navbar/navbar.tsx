@@ -36,15 +36,15 @@ function Navbar() {
       setUser(user); // user can be either User object or null
       setLoading(false); // Set loading to false after fetching
     };
-  
+
     fetchUser();
-  
+
     // Set up a listener to detect changes in authentication state
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
       setLoading(false); // Update loading state
     });
-  
+
     // Clean up the listener on component unmount
     return () => {
       subscription.unsubscribe();
@@ -62,7 +62,7 @@ function Navbar() {
   };
 
   return (
-    <nav className="w-full h-16 min-h-16 flex justify-center items-center border-b border-gray-300 sticky top-0">
+    <nav className="w-full h-16 min-h-16 flex justify-center items-center border-b border-gray-300 sticky top-0 z-10 bg-white">
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo or Branding */}
         <div className="text-2xl font-bold">
@@ -94,14 +94,14 @@ function Navbar() {
         {/* Profile or Loading Avatar */}
         {loading ? (
           <div className="flex justify-center items-center gap-3 cursor-pointer">
-                <Label htmlFor="" className="text-md text-gray-700 cursor-pointer">
-                  user
-                </Label>
-                <Avatar>
-                  <AvatarImage src="https://github.com/shadcn.png" />
-                  <AvatarFallback>CN</AvatarFallback>
-                </Avatar>
-              </div>
+            <Label htmlFor="" className="text-md text-gray-700 cursor-pointer">
+              user
+            </Label>
+            <Avatar>
+              <AvatarImage src="https://github.com/shadcn.png" />
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
+          </div>
         ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -20,7 +20,7 @@ import { Button } from "../ui/button";
 
 function ForumsSidebar() {
     return (
-        <div className="w-[200px] border-r border-gray-300 sticky top-0 p-6">
+        <div className="w-[250px] h-full border-r border-gray-300 p-6 sticky top-16">
             <div className="text-xl font-bold text-gray-800">
                 Forums
             </div>

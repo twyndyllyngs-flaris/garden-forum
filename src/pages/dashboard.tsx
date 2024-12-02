@@ -12,10 +12,10 @@ function Dashboard() {
   const location = useLocation();
 
   return (
-    <div className="flex flex-col w-screen h-screen">
+    <div className="w-screen h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex-1 w-full h-full">
+      <div className="flex-1 overflow-y-auto">
         {location.pathname.startsWith("/guides") && <Guides />}
         {location.pathname === "/forum" && <Forum />}
       </div>
