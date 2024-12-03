@@ -26,6 +26,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
     AlertDialogTrigger,
+    AlertDialogOverlay,
 } from "../components/ui/alert-dialog"
 import { Input } from "../components/ui/input"
 import { Textarea } from "../components/ui/text-area"
@@ -63,10 +64,12 @@ function Forum() {
     const [imageFiles, setImageFiles] = useState<FileList | null>(null);
     const [loading, setLoading] = useState(false); // Loading state for the Post button
 
+    const [forumDialog, setForumDialog] = useState(false)
+    const [openedForumData, setOpenedForumData] = useState<Forum | null>(null)
+
     const fetchForumsAndProfiles = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         const currentUserID = user?.id;
-        console.log(user, currentUserID)
 
         try {
             const { data: forums, error: forumsError } = await supabase
@@ -218,6 +221,21 @@ function Forum() {
                             : forum
                     )
                 );
+
+                let newOpenedForumData = openedForumData;
+                if (newOpenedForumData && isCurrentlyUpvoted) {
+                    newOpenedForumData.upvotes -= 1;
+                } else if (newOpenedForumData && !isCurrentlyUpvoted) {
+                    newOpenedForumData.upvotes += 1;
+                }
+
+                if (newOpenedForumData && downvoteStates[forumId]) {
+                    newOpenedForumData.downvotes -= 1;
+                } else if (newOpenedForumData && !downvoteStates[forumId]) {
+                    newOpenedForumData.downvotes += 1;
+                }
+
+                setOpenedForumData(newOpenedForumData)
             }
 
             // Query to check if a vote exists for this user and forum
@@ -332,6 +350,21 @@ function Forum() {
                             : forum
                     )
                 );
+
+                let newOpenedForumData = openedForumData;
+                if (newOpenedForumData && isCurrentlyDownvoted) {
+                    newOpenedForumData.downvotes -= 1;
+                } else if (newOpenedForumData && !isCurrentlyDownvoted) {
+                    newOpenedForumData.downvotes += 1;
+                }
+
+                if (newOpenedForumData && upvoteStates[forumId]) {
+                    newOpenedForumData.upvotes -= 1;
+                } else if (newOpenedForumData && !upvoteStates[forumId]) {
+                    newOpenedForumData.upvotes += 1;
+                }
+
+                setOpenedForumData(newOpenedForumData)
             }
 
             // Query to check if a vote exists for this user and forum
@@ -391,14 +424,14 @@ function Forum() {
         const { data: { user } } = await supabase.auth.getUser();
         const currentUserID = user?.id;
 
-        if(currentUserID == undefined){
+        if (currentUserID == undefined) {
             navigate("/login")
             return;
         }
 
         setCreateSpace(true);
     }
-    
+
     const closeCreateSpace = () => setCreateSpace(false);
 
     const handlePost = async (e: React.FormEvent) => {
@@ -476,6 +509,15 @@ function Forum() {
         }
     }
 
+    const openForumDialog = async (forum: Forum) => {
+        setOpenedForumData(forum)
+        setForumDialog(true);
+    }
+
+    const closeForumDialog = async () => {
+        setForumDialog(false);
+    }
+
     return (
         <div className="flex ml-auto w-[75%] h-full">
             <ForumsSidebar openCreateSpace={openCreateSpace} closeCreateSpace={closeCreateSpace} />
@@ -489,10 +531,11 @@ function Forum() {
                         <Card
                             key={forum.forum_id}
                             className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
+                            onClick={() => openForumDialog(forum)}
                         >
-                            <CardHeader>
+                            <CardHeader >
                                 <div className="w-full flex items-center gap-3 cursor-pointer">
-                                    <Avatar>
+                                    <Avatar onClick={(e) => e.stopPropagation()}>
                                         <AvatarImage src="https://github.com/shadcn.png" />
                                         <AvatarFallback>
                                             {forum.profiles?.first_name?.[0] || "?"}
@@ -501,6 +544,7 @@ function Forum() {
                                     <Label
                                         htmlFor=""
                                         className="text-md text-gray-700 cursor-pointer"
+                                        onClick={(e) => e.stopPropagation()}
                                     >
                                         {forum.profiles?.first_name}{" "}
                                         {forum.profiles?.last_name}
@@ -521,7 +565,11 @@ function Forum() {
                                     {forum.description.length > 100 && (
                                         <span
                                             className="text-blue-500 cursor-pointer ml-2"
-                                            onClick={() => toggleExpand(forum.forum_id)}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                toggleExpand(forum.forum_id)
+                                            }
+                                            }
                                         >
                                             {expandedStates[forum.forum_id]
                                                 ? "See less"
@@ -541,7 +589,7 @@ function Forum() {
                             </CardContent>
                             <CardFooter>
                                 <div className="flex gap-1">
-                                    <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full">
+                                    <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
                                         <div
                                             className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
                                                 }`}
@@ -634,6 +682,192 @@ function Forum() {
                             </Button>
                         </AlertDialogFooter>
                     </form>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={forumDialog} onOpenChange={setForumDialog}>
+                <AlertDialogContent className="w-[70%] h-[90%] max-w-none z-[9998] p-0 border-none">
+                    <AlertDialogCancel
+                        onClick={closeForumDialog}
+                        className="fixed w-11 h-11 top-[-30px] left-[-270px] rounded-full font-bold text-gray-700"
+                    >
+                        X
+                    </AlertDialogCancel>
+
+                    <div className="w-full h-full max-h-full overflow-auto flex rounded-md">
+                        <div className="w-[70%] h-full rounded-md">
+                            <img
+                                src={openedForumData?.links_imgs?.[0] || "https://via.placeholder.com/600?text=No+Image+Available"}
+                                alt={openedForumData?.title || "No title available"}
+                                className="w-full h-full object-cover rounded-md"
+                            />
+                        </div>
+
+                        <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
+                            <div className="flex gap-2 items-center">
+                                <Avatar onClick={(e) => e.stopPropagation()}>
+                                    <AvatarImage src="https://github.com/shadcn.png" />
+                                    <AvatarFallback>
+                                        CN
+                                    </AvatarFallback>
+                                </Avatar>
+                                <Label
+                                    htmlFor=""
+                                    className="text-md text-gray-700 cursor-pointer"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    {openedForumData?.profiles?.first_name}{" "}
+                                    {openedForumData?.profiles?.last_name}
+                                </Label>
+                                <Label className="text-gray-500 ml-auto">
+                                    {openedForumData?.date_created
+                                        ? new Date(openedForumData.date_created).toLocaleDateString()
+                                        : "Unknown date"}
+                                </Label>
+                            </div>
+
+
+                            <div className="mt-4">
+                                <div className="text-md font-semibold text-gray-800 mb-4">
+                                    {openedForumData?.title}
+                                </div>
+                                <div className="text-sm text-gray-600 leading-relaxed">
+                                    {openedForumData?.description}
+                                </div>
+
+                                <Separator className="mt-4" />
+
+                                <div className="mt-4">
+                                    <div className="flex w-fit border rounded-full">
+                                        <div
+                                            className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none 
+                                            ${upvoteStates[openedForumData?.forum_id || 1] ? "bg-green-100" : ""}`}
+                                            onClick={() => toggleUpvote(openedForumData?.forum_id || "1")}
+                                        >
+                                            <svg
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    d="M12 4 3 15h6v5h6v-5h6z"
+                                                    stroke="#666"
+                                                    strokeWidth="1.5"
+                                                    // fill={isUpvoted ? "#92c78b" : "none"}
+                                                    fill={upvoteStates[openedForumData?.forum_id || 1] ? "#92c78b" : "none"}
+                                                    strokeLinejoin="round"
+                                                ></path>
+                                            </svg>
+                                            <div className="text-sm font-semibold text-gray-700">
+                                                Upvote{" "}
+                                                <span className="font-normal text-sm">
+                                                    ⧇ {openedForumData?.upvotes}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div
+                                            className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none 
+                                            ${downvoteStates[openedForumData?.forum_id || 1] ? "bg-red-100" : ""}
+                                        `}
+                                            onClick={() => toggleDownvote(openedForumData?.forum_id || "1")}
+                                        >
+                                            <svg
+                                                width="24"
+                                                height="24"
+                                                viewBox="0 0 24 24"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    d="m12 20 9-11h-6V4H9v5H3z"
+                                                    stroke="#666"
+                                                    strokeWidth="1.5"
+                                                    fill={downvoteStates[openedForumData?.forum_id || 1] ? "#cc4767" : "none"}
+                                                    strokeLinejoin="round"
+                                                ></path>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <Separator className="mt-4" />
+
+                                <div className="w-full flex flex-col gap-4 mt-4">
+                                    <div className="flex flex-col w-full">
+                                        <div className="w-full flex gap-4">
+                                            <Avatar onClick={(e) => e.stopPropagation()}>
+                                                <AvatarImage src="https://github.com/shadcn.png" />
+                                                <AvatarFallback>
+                                                    CN
+                                                </AvatarFallback>
+                                            </Avatar>
+
+                                            <div className="flex flex-col bg-gray-100 relative rounded p-3">
+                                                <Label
+                                                    htmlFor=""
+                                                    className="text-md text-gray-700 cursor-pointer"
+                                                >
+                                                    Ralph Matthew De Leon
+                                                </Label>
+                                                <h2 className="text-gray-700 text-[.9rem]">
+                                                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Placeat fugiat minus libero corrupti dolores voluptatum!
+                                                </h2>
+                                            </div>
+                                        </div>
+
+                                        <div className=" ml-auto flex items-center">
+                                            <Label className="text-gray-500">
+                                                11/30/24
+                                            </Label>
+
+                                            <Button className="text-gray-700" variant="link">
+                                                Reply
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col w-full">
+                                        <div className="w-full flex gap-4">
+                                            <Avatar onClick={(e) => e.stopPropagation()}>
+                                                <AvatarImage src="https://github.com/shadcn.png" />
+                                                <AvatarFallback>
+                                                    CN
+                                                </AvatarFallback>
+                                            </Avatar>
+
+                                            <div className="flex flex-col bg-gray-100 relative rounded p-3">
+                                                <Label
+                                                    htmlFor=""
+                                                    className="text-md text-gray-700 cursor-pointer"
+                                                >
+                                                    Ralph Matthew De Leon
+                                                </Label>
+                                                <h2 className="text-gray-700 text-[.9rem]">
+                                                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Placeat fugiat minus libero corrupti dolores voluptatum!
+                                                </h2>
+                                            </div>
+                                        </div>
+
+                                        <div className=" ml-auto flex items-center">
+                                            <Label className="text-gray-500">
+                                                11/30/24
+                                            </Label>
+
+                                            <Button className="text-gray-700" variant="link">
+                                                Reply
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div className="w-full h-20 sticky bottom-0">
+                                <Textarea placeholder="Comment as Ralph Matthew De Leon" required value={description} onChange={(e) => setDescription(e.target.value)} />
+                            </div>
+
+                        </div>
+                    </div>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
