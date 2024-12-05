@@ -34,6 +34,10 @@ import { Separator } from "../components/ui/seperator";
 import { Button } from "../components/ui/button";
 import { ReceiptRussianRuble } from "lucide-react";
 
+//icons
+import { FaPaperPlane } from "react-icons/fa";
+import { StringLiteral } from "typescript";
+
 interface Forum {
     forum_id: string;
     uid: string;
@@ -66,10 +70,16 @@ function Forum() {
 
     const [forumDialog, setForumDialog] = useState(false)
     const [openedForumData, setOpenedForumData] = useState<Forum | null>(null)
+    const [openedForumComments, setOpenedForumComments] = useState<any>(null)
+    const [newComment, setNewComment] = useState("")
+
+    const [loggedInUser, setLoggedInUser] = useState<any>(null)
 
     const fetchForumsAndProfiles = async () => {
         const { data: { user } } = await supabase.auth.getUser()
         const currentUserID = user?.id;
+
+        setLoggedInUser(user)
 
         try {
             const { data: forums, error: forumsError } = await supabase
@@ -510,12 +520,82 @@ function Forum() {
     }
 
     const openForumDialog = async (forum: Forum) => {
+        const { data: comments, error: commentsError } = await supabase
+            .from("comments")
+            .select(`
+                    comment_id,
+                    forum_id,
+                    uid,
+                    parent_id,
+                    content,
+                    date_created,
+                    profiles(
+                        first_name,
+                        last_name
+                    )
+                `)
+            .eq("forum_id", forum.forum_id);
+
+        if (commentsError) {
+            throw commentsError;
+        }
+
+        const flattenedComments = comments.map((origCommentInterface) => ({
+            comment_id: origCommentInterface.comment_id,
+            forum_id: origCommentInterface.forum_id,
+            uid: origCommentInterface.uid,
+            parent_id: origCommentInterface.parent_id,
+            content: origCommentInterface.content,
+            date_created: origCommentInterface.date_created,
+            first_name: Object.values(origCommentInterface.profiles)[1],
+            last_name: Object.values(origCommentInterface.profiles)[0]
+        }))
+
+        setOpenedForumComments(flattenedComments)
         setOpenedForumData(forum)
         setForumDialog(true);
     }
 
     const closeForumDialog = async () => {
         setForumDialog(false);
+    }
+
+    const handleComment = async () => {
+        console.log(newComment)
+        console.log(openedForumData)
+
+        if(newComment == "") return
+        
+        const comment_id = crypto.randomUUID();
+        const date_created = new Date().toISOString();
+
+        const { data, error } = await supabase
+        .from('comments') // The table where comments are stored
+        .insert([
+            {
+                comment_id: comment_id,
+                forum_id: openedForumData?.forum_id,    // ID of the forum the comment belongs to
+                uid: loggedInUser.id,          // ID of the user posting the comment
+                content: newComment,     // The actual content of the comment
+                date_created: date_created, // Current timestamp
+            }
+        ]);
+
+        if(error) throw error
+        
+        setNewComment("")
+
+        const newItem = {
+            comment_id: comment_id,
+            content: newComment,
+            date_created: date_created,
+            first_name: loggedInUser.user_metadata.first_name,
+            forum_id: openedForumData?.forum_id,
+            last_name: loggedInUser.user_metadata.last_name,
+            uid: loggedInUser.id
+        }
+
+        setOpenedForumComments((prevComments: any) => [...prevComments, newItem])
     }
 
     return (
@@ -793,77 +873,57 @@ function Forum() {
                                 <Separator className="mt-4" />
 
                                 <div className="w-full flex flex-col gap-4 mt-4">
-                                    <div className="flex flex-col w-full">
-                                        <div className="w-full flex gap-4">
-                                            <Avatar onClick={(e) => e.stopPropagation()}>
-                                                <AvatarImage src="https://github.com/shadcn.png" />
-                                                <AvatarFallback>
-                                                    CN
-                                                </AvatarFallback>
-                                            </Avatar>
+                                    {openedForumComments?.map((comment:any) => (
+                                        <div key={comment.comment_id} className="flex flex-col w-full">
+                                            <div className="w-full flex gap-4">
+                                                {/* Avatar */}
+                                                <Avatar onClick={(e) => e.stopPropagation()}>
+                                                    <AvatarImage src="https://github.com/shadcn.png" />
+                                                    <AvatarFallback>
+                                                        {comment.first_name + " " + comment.last_name}
+                                                    </AvatarFallback>
+                                                </Avatar>
 
-                                            <div className="flex flex-col bg-gray-100 relative rounded p-3">
-                                                <Label
-                                                    htmlFor=""
-                                                    className="text-md text-gray-700 cursor-pointer"
-                                                >
-                                                    Ralph Matthew De Leon
+                                                {/* Comment Content */}
+                                                <div className="flex flex-col bg-gray-100 relative rounded p-3">
+                                                    {/* User Name */}
+                                                    <Label
+                                                        htmlFor=""
+                                                        className="text-md text-gray-700 cursor-pointer"
+                                                    >
+                                                        {comment.first_name + " " + comment.last_name}
+                                                    </Label>
+
+                                                    {/* Comment Text */}
+                                                    <h2 className="text-gray-700 text-[.9rem]">
+                                                        {comment.content}
+                                                    </h2>
+                                                </div>
+                                            </div>
+
+                                            {/* Date and Reply */}
+                                            <div className="ml-auto flex items-center">
+                                                <Label className="text-gray-500">
+                                                    {new Date(comment.date_created).toLocaleDateString()}
                                                 </Label>
-                                                <h2 className="text-gray-700 text-[.9rem]">
-                                                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Placeat fugiat minus libero corrupti dolores voluptatum!
-                                                </h2>
+
+                                                <Button className="text-gray-700" variant="link">
+                                                    Reply
+                                                </Button>
                                             </div>
                                         </div>
-
-                                        <div className=" ml-auto flex items-center">
-                                            <Label className="text-gray-500">
-                                                11/30/24
-                                            </Label>
-
-                                            <Button className="text-gray-700" variant="link">
-                                                Reply
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col w-full">
-                                        <div className="w-full flex gap-4">
-                                            <Avatar onClick={(e) => e.stopPropagation()}>
-                                                <AvatarImage src="https://github.com/shadcn.png" />
-                                                <AvatarFallback>
-                                                    CN
-                                                </AvatarFallback>
-                                            </Avatar>
-
-                                            <div className="flex flex-col bg-gray-100 relative rounded p-3">
-                                                <Label
-                                                    htmlFor=""
-                                                    className="text-md text-gray-700 cursor-pointer"
-                                                >
-                                                    Ralph Matthew De Leon
-                                                </Label>
-                                                <h2 className="text-gray-700 text-[.9rem]">
-                                                    Lorem, ipsum dolor sit amet consectetur adipisicing elit. Placeat fugiat minus libero corrupti dolores voluptatum!
-                                                </h2>
-                                            </div>
-                                        </div>
-
-                                        <div className=" ml-auto flex items-center">
-                                            <Label className="text-gray-500">
-                                                11/30/24
-                                            </Label>
-
-                                            <Button className="text-gray-700" variant="link">
-                                                Reply
-                                            </Button>
-                                        </div>
-                                    </div>
+                                    ))}
                                 </div>
 
                             </div>
 
-                            <div className="w-full h-20 sticky bottom-0">
-                                <Textarea placeholder="Comment as Ralph Matthew De Leon" required value={description} onChange={(e) => setDescription(e.target.value)} />
+                            <div className="w-full h-24 sticky bottom-0 shadow-sm">
+
+                                <Textarea className="bg-gray-50 h-full resize-none" placeholder={"Comment as " + openedForumData?.profiles?.first_name + " " + openedForumData?.profiles?.last_name} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+
+                                <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
+                                    <FaPaperPlane className="absolute w-5 h-5" color="#3285a8" />
+                                </div>
                             </div>
 
                         </div>
@@ -875,3 +935,7 @@ function Forum() {
 }
 
 export default Forum;
+function asnyc() {
+    throw new Error("Function not implemented.");
+}
+
