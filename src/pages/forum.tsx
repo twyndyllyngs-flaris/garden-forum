@@ -72,6 +72,8 @@ function Forum() {
     const [openedForumData, setOpenedForumData] = useState<Forum | null>(null)
     const [openedForumComments, setOpenedForumComments] = useState<any>(null)
     const [newComment, setNewComment] = useState("")
+    const [deleteCommentDialog, setDeleteCommentDialog] = useState(false)
+    const [deleteCommentID, setDeleteCommentID] = useState("")
 
     const [loggedInUser, setLoggedInUser] = useState<any>(null)
 
@@ -561,28 +563,28 @@ function Forum() {
     }
 
     const handleComment = async () => {
-        console.log(newComment)
-        console.log(openedForumData)
+        if (!loggedInUser)
+            navigate("/login")
 
-        if(newComment == "") return
-        
+        if (newComment == "") return
+
         const comment_id = crypto.randomUUID();
         const date_created = new Date().toISOString();
 
         const { data, error } = await supabase
-        .from('comments') // The table where comments are stored
-        .insert([
-            {
-                comment_id: comment_id,
-                forum_id: openedForumData?.forum_id,    // ID of the forum the comment belongs to
-                uid: loggedInUser.id,          // ID of the user posting the comment
-                content: newComment,     // The actual content of the comment
-                date_created: date_created, // Current timestamp
-            }
-        ]);
+            .from('comments') // The table where comments are stored
+            .insert([
+                {
+                    comment_id: comment_id,
+                    forum_id: openedForumData?.forum_id,    // ID of the forum the comment belongs to
+                    uid: loggedInUser.id,          // ID of the user posting the comment
+                    content: newComment,     // The actual content of the comment
+                    date_created: date_created, // Current timestamp
+                }
+            ]);
 
-        if(error) throw error
-        
+        if (error) throw error
+
         setNewComment("")
 
         const newItem = {
@@ -596,6 +598,45 @@ function Forum() {
         }
 
         setOpenedForumComments((prevComments: any) => [...prevComments, newItem])
+
+        setForums((prevForums) =>
+            prevForums.map((forum) =>
+                forum.forum_id === openedForumData?.forum_id
+                    ? { ...forum, count_comments: forum.count_comments + 1 }
+                    : forum
+            )
+        );
+    }
+
+    const openDeleteCommentDialog = async (comment_id: string) => {
+        setDeleteCommentDialog(true)
+        setDeleteCommentID(comment_id)
+    }
+
+    const handleDeleteComment = async () => {
+        const { data, error } = await supabase
+            .from('comments')
+            .delete()
+            .eq('comment_id', deleteCommentID);
+
+        if (error)
+            console.error('Error deleting comment:', error.message);
+        else
+            console.log('Comment deleted successfully:', data);
+
+        // Remove the comment from the opened forum's comments
+        setOpenedForumComments((prevComments: any) =>
+            prevComments.filter((comment: any) => comment.comment_id !== deleteCommentID)
+        );
+
+        // Decrement the comment count for the corresponding forum
+        setForums((prevForums) =>
+            prevForums.map((forum) =>
+                forum.forum_id === openedForumData?.forum_id
+                    ? { ...forum, count_comments: forum.count_comments - 1 }
+                    : forum
+            )
+        );
     }
 
     return (
@@ -873,11 +914,14 @@ function Forum() {
                                 <Separator className="mt-4" />
 
                                 <div className="w-full flex flex-col gap-4 mt-4">
-                                    {openedForumComments?.map((comment:any) => (
-                                        <div key={comment.comment_id} className="flex flex-col w-full">
-                                            <div className="w-full flex gap-4">
+                                    {openedForumComments?.map((comment: any) => (
+                                        <div key={comment.comment_id} className="flex flex-col">
+                                            <div className="flex gap-4 w-full">
                                                 {/* Avatar */}
-                                                <Avatar onClick={(e) => e.stopPropagation()}>
+                                                <Avatar
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="flex-shrink-0"
+                                                >
                                                     <AvatarImage src="https://github.com/shadcn.png" />
                                                     <AvatarFallback>
                                                         {comment.first_name + " " + comment.last_name}
@@ -885,7 +929,7 @@ function Forum() {
                                                 </Avatar>
 
                                                 {/* Comment Content */}
-                                                <div className="flex flex-col bg-gray-100 relative rounded p-3">
+                                                <div className="flex flex-col bg-gray-100 relative rounded p-3 break-words max-w-full overflow-auto">
                                                     {/* User Name */}
                                                     <Label
                                                         htmlFor=""
@@ -901,25 +945,38 @@ function Forum() {
                                                 </div>
                                             </div>
 
+
                                             {/* Date and Reply */}
-                                            <div className="ml-auto flex items-center">
+                                            <div className="ml-auto flex items-center gap-3">
                                                 <Label className="text-gray-500">
                                                     {new Date(comment.date_created).toLocaleDateString()}
                                                 </Label>
 
-                                                <Button className="text-gray-700" variant="link">
+                                                <Button className="text-gray-700 m-0 p-0" variant="link">
                                                     Reply
                                                 </Button>
+
+                                                {/* Conditionally show Delete button only for the logged-in user's comments */}
+                                                {comment.uid === loggedInUser?.id && (
+                                                    <Button
+                                                        className="text-red-600 m-0 p-0"
+                                                        variant="link"
+                                                        onClick={() => openDeleteCommentDialog(comment.comment_id)}
+                                                    >
+                                                        Delete
+                                                    </Button>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
 
+
                             </div>
 
                             <div className="w-full h-24 sticky bottom-0 shadow-sm">
 
-                                <Textarea className="bg-gray-50 h-full resize-none" placeholder={"Comment as " + openedForumData?.profiles?.first_name + " " + openedForumData?.profiles?.last_name} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+                                <Textarea className="bg-gray-50 h-full resize-none" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
 
                                 <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
                                     <FaPaperPlane className="absolute w-5 h-5" color="#3285a8" />
@@ -928,6 +985,23 @@ function Forum() {
 
                         </div>
                     </div>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={deleteCommentDialog} onOpenChange={setDeleteCommentDialog}>
+                <AlertDialogOverlay className="bg-transparent" /> {/* Customize the overlay */}
+                <AlertDialogContent className="z-[9999]">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your comment
+                            and remove your data from our servers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteComment}>Continue</AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
