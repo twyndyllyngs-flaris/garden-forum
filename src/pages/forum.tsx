@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../config/supabase/supabaseClient";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import "../styling/output.css";
 import "non.geist";
 
@@ -32,11 +32,21 @@ import { Input } from "../components/ui/input"
 import { Textarea } from "../components/ui/text-area"
 import { Separator } from "../components/ui/seperator";
 import { Button } from "../components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "../components/ui/drop-down";
 import { ReceiptRussianRuble } from "lucide-react";
 
 //icons
 import { FaPaperPlane } from "react-icons/fa";
-import { StringLiteral } from "typescript";
+import { IoClose } from 'react-icons/io5';
+import { MdMoreHoriz } from 'react-icons/md';
 
 interface Forum {
     forum_id: string;
@@ -54,8 +64,17 @@ interface Forum {
     } | null;
 }
 
+interface AlertDialogContent {
+    title: string,
+    content: string,
+    buttonText: string,
+    action: () => Promise<void>,
+    cancel: () => void,
+}
+
 function Forum() {
     const navigate = useNavigate();
+    const { forum_id } = useParams(); // Extract forum_id from the URL
 
     const [forums, setForums] = useState<Forum[]>([]);
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
@@ -74,6 +93,14 @@ function Forum() {
     const [newComment, setNewComment] = useState("")
     const [deleteCommentDialog, setDeleteCommentDialog] = useState(false)
     const [deleteCommentID, setDeleteCommentID] = useState("")
+    const [dialogContent, setDialogContent] = useState<AlertDialogContent>({
+        title: "Are you sure?",
+        content: "This action cannot be undone. This will permanently delete your data and remove it from our servers.",
+        buttonText: "Delete",
+        action: async () => { return },
+        cancel: () => { return },
+    })
+    const [deleteForumID, setDeleteForumID] = useState<string | null>(null)
 
     const [loggedInUser, setLoggedInUser] = useState<any>(null)
 
@@ -164,7 +191,24 @@ function Forum() {
 
     useEffect(() => {
         fetchForumsAndProfiles();
+
+
     }, []);
+
+    useEffect(() => {
+        // Open the dialog if forum_id exists in the URL
+        if (forum_id) {
+            // Find the forum in the forums array
+            const forum = forums.find((f) => f.forum_id === forum_id);
+
+            if (forum) {
+                openForumDialog(forum); // Pass the full forum object
+            } else {
+                console.error("Forum with the given forum_id not found.");
+            }
+        }
+    }, [forums]);
+
 
     const toggleExpand = (forumId: string) => {
         setExpandedStates((prevState) => ({
@@ -521,7 +565,7 @@ function Forum() {
         }
     }
 
-    const openForumDialog = async (forum: Forum) => {
+    const openForumDialog = async (forum: any) => {
         const { data: comments, error: commentsError } = await supabase
             .from("comments")
             .select(`
@@ -553,6 +597,9 @@ function Forum() {
             last_name: Object.values(origCommentInterface.profiles)[0]
         }))
 
+        // Add forum_id to the URL
+        navigate(`/forum/${forum.forum_id}`);
+
         setOpenedForumComments(flattenedComments)
         setOpenedForumData(forum)
         setForumDialog(true);
@@ -560,6 +607,7 @@ function Forum() {
 
     const closeForumDialog = async () => {
         setForumDialog(false);
+        navigate('/forum');
     }
 
     const handleComment = async () => {
@@ -609,11 +657,31 @@ function Forum() {
     }
 
     const openDeleteCommentDialog = async (comment_id: string) => {
-        setDeleteCommentDialog(true)
         setDeleteCommentID(comment_id)
     }
 
+    const handleCloseCommentDialog = () => {
+        setDeleteCommentID("")
+    }
+
+    useEffect(() => {
+        if (deleteCommentID) {
+
+            setDialogContent({
+                title: "Are you sure?",
+                content: "This action cannot be undone. This willa permanently delete your comment and remove your data from our servers.",
+                buttonText: "Delete",
+                action: handleDeleteComment,
+                cancel: handleCloseCommentDialog
+            })
+            setDeleteCommentDialog(true);
+        } else {
+            setDeleteCommentDialog(false);
+        }
+    }, [deleteCommentID]);
+
     const handleDeleteComment = async () => {
+        console.log(deleteCommentID)
         const { data, error } = await supabase
             .from('comments')
             .delete()
@@ -637,6 +705,53 @@ function Forum() {
                     : forum
             )
         );
+
+        handleCloseCommentDialog()
+    }
+
+    const openDeletePostDialog = async (forum_id: string) => {
+        setDeleteForumID(forum_id)
+    }
+
+    const closeDeletePostDialog = () => {
+        setDeleteForumID(null)
+    }
+
+    useEffect(() => {
+        if (deleteForumID) {
+            setDialogContent({
+                title: "Are you sure?",
+                content: "This action cannot be undone. This willa permanently delete your forum and remove your data from our servers.",
+                buttonText: "Delete",
+                action: handleDeleteForum,
+                cancel: closeDeletePostDialog
+            })
+            setDeleteCommentDialog(true);
+        } else {
+            setDeleteCommentDialog(false);
+        }
+    }, [deleteForumID]);
+
+    const handleDeleteForum = async () => {
+        console.log(deleteForumID)
+
+
+        const { data, error } = await supabase
+            .from('forums')
+            .delete()
+            .eq('forum_id', deleteForumID);
+
+        if (error)
+            console.error('Error deleting comment:', error.message);
+        else
+            console.log('Comment deleted successfully:', data);
+
+        // Remove the forum from the forums state
+        setForums((prevForums: any) =>
+            prevForums.filter((forum: any) => forum.forum_id !== deleteForumID)
+        );
+
+        closeDeletePostDialog()
     }
 
     return (
@@ -654,7 +769,33 @@ function Forum() {
                             className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
                             onClick={() => openForumDialog(forum)}
                         >
-                            <CardHeader >
+                            <CardHeader className="relative">
+                                {forum.uid === loggedInUser?.id && (
+                                    <div className="absolute top-1 right-3">
+                                        <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <div className="flex justify-center items-center gap-3 cursor-pointer">
+                                                        <MdMoreHoriz className="w-6 h-6" color="gray" />
+                                                    </div>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
+                                                    <DropdownMenuGroup>
+                                                        <DropdownMenuItem
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                openDeletePostDialog(forum.forum_id)
+                                                            }} className="cursor-pointer">
+                                                            {/* <UserIcon /> */}
+                                                            <div>Delete</div>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuGroup>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="w-full flex items-center gap-3 cursor-pointer">
                                     <Avatar onClick={(e) => e.stopPropagation()}>
                                         <AvatarImage src="https://github.com/shadcn.png" />
@@ -806,7 +947,14 @@ function Forum() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={forumDialog} onOpenChange={setForumDialog}>
+            <AlertDialog open={forumDialog} onOpenChange={(isOpen) => {
+                setForumDialog(isOpen);
+
+                // Run custom logic only when the dialog closes
+                if (!isOpen) {
+                    closeForumDialog()
+                }
+            }}>
                 <AlertDialogContent className="w-[70%] h-[90%] max-w-none z-[9998] p-0 border-none">
                     <AlertDialogCancel
                         onClick={closeForumDialog}
@@ -916,7 +1064,7 @@ function Forum() {
                                 <div className="w-full flex flex-col gap-4 mt-4">
                                     {openedForumComments?.map((comment: any) => (
                                         <div key={comment.comment_id} className="flex flex-col">
-                                            <div className="flex gap-4 w-full">
+                                            <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
                                                 {/* Avatar */}
                                                 <Avatar
                                                     onClick={(e) => e.stopPropagation()}
@@ -988,19 +1136,18 @@ function Forum() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={deleteCommentDialog} onOpenChange={setDeleteCommentDialog}>
+            <AlertDialog open={deleteCommentDialog}>
                 <AlertDialogOverlay className="bg-transparent" /> {/* Customize the overlay */}
                 <AlertDialogContent className="z-[9999]">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle> {dialogContent.title} </AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your comment
-                            and remove your data from our servers.
+                            {dialogContent.content}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteComment}>Continue</AlertDialogAction>
+                        <AlertDialogCancel onClick={dialogContent.cancel}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={dialogContent.action}>{dialogContent.buttonText}</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -1009,7 +1156,5 @@ function Forum() {
 }
 
 export default Forum;
-function asnyc() {
-    throw new Error("Function not implemented.");
-}
+
 

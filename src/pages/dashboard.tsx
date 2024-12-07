@@ -17,7 +17,7 @@ function Dashboard() {
 
       <div className="flex-1 overflow-y-auto">
         {location.pathname.startsWith("/guides") && <Guides />}
-        {location.pathname === "/forum" && <Forum />}
+        {location.pathname.startsWith("/forum") && <Forum />}
       </div>
     </div>
   );
