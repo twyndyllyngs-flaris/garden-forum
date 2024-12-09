@@ -22,12 +22,34 @@ import {
   DropdownMenuTrigger,
 } from "../ui/drop-down";
 import { Button } from "../ui/button"; // Import ShadCN Button
+import Badge from '@mui/material/Badge';
+import MailIcon from '@mui/icons-material/Mail';
+import IconButton from '@mui/material/IconButton';
+
+//libraries
+import { formatDistanceToNow } from 'date-fns';
+
+type NotificationPayload = {
+  notification_id: string;
+  recipient_id: string;
+  sender_id: string | null;
+  type: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+  forum_id: string | null;
+  plant_id: string | null;
+};
 
 function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null); // Set user type to User or null
   const [loading, setLoading] = useState(true); // Loading state
+
+  // for notifications
+  const [notifications, setNotifications] = useState<NotificationPayload[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     // Check if user is logged in on component mount
@@ -50,6 +72,122 @@ function Navbar() {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    // Set up the real-time subscription using `channel`
+    const notificationChannel = supabase
+      .channel('notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `recipient_id=eq.${user.id}` },
+        (payload) => {
+          console.log('Notification payload received:', payload);
+
+          if (payload?.new) {
+            // Map payload to NotificationPayload safely
+            const mappedNotification: NotificationPayload = {
+              notification_id: payload.new.notification_id ?? '',
+              recipient_id: payload.new.recipient_id ?? '',
+              sender_id: payload.new.sender_id ?? null,
+              type: payload.new.type ?? '',
+              message: payload.new.message ?? '',
+              read: payload.new.read ?? false,
+              created_at: payload.new.created_at ?? new Date().toISOString(),
+              forum_id: payload.new.forum_id ?? null,
+              plant_id: payload.new.plant_id ?? null,
+            };
+
+            setNotifications((prev) => [mappedNotification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      // Clean up the subscription when user is logged out or component unmounts
+      supabase.removeChannel(notificationChannel);
+    };
+  }, [user]);
+
+  // Fetch initial notifications for logged-in user
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchNotifications = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('recipient_id', user.id);
+
+        if (error) {
+          console.error('Error fetching initial notifications:', error);
+        } else {
+          setNotifications(data || []);
+          setUnreadCount((data || []).filter(n => !n.read).length);
+          console.log(data, "Asdfasdfasdf")
+        }
+      } catch (error) {
+        console.error('Unexpected error:', error);
+      }
+    };
+
+    fetchNotifications();
+  }, [user?.id]);
+
+  // Handle notification click
+  const handleNotificationClick = (notification: NotificationPayload) => {
+    console.log("Notification clicked:", notification);
+
+    // Mark as read by updating Supabase table (if needed)
+    markNotificationAsRead(notification.notification_id);
+
+    // Handle specific actions based on notification type
+    if (notification.type === "comment") {
+      console.log("Navigating to the forum where the comment was made.");
+      // Implement navigation logic here if applicable
+    }
+
+    if (notification.type === "upvote") {
+      console.log("Handling upvote logic here.");
+    }
+
+    if (notification.type === "system") {
+      console.log("Handling system logic here.");
+    }
+
+    setUnreadCount((prev) => (prev > 0 ? prev - 1 : 0));
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read: true })
+      .match({ notification_id: notificationId });
+
+    if (error) {
+      console.error("Failed to mark notification as read:", error);
+    } else {
+      console.log("Notification marked as read.");
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.notification_id === notificationId ? { ...n, read: true } : n
+        )
+      );
+    }
+  };
+
+  // Example: Display time in a relative way
+  const timeAgo = (timestamp: string) => {
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  };
+
+  const test = async () => {
+    console.log(notifications)
+  }
 
   const handleLogout = async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
@@ -83,12 +221,47 @@ function Navbar() {
           >
             Forum
           </Link>
-          <Link
-            to="/faq"
-            className={`hover:text-gray-700 px-3 py-2 rounded-md font-medium ${location.pathname === "/faq" ? "text-gray-700" : ""}`}
-          >
-            FAQ
-          </Link>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex justify-center items-center gap-3 cursor-pointer">
+                <IconButton>
+                  <Badge badgeContent={unreadCount} color="primary">
+                    <MailIcon />
+                  </Badge>
+                </IconButton>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-fit max-w-[300px] max-h-[600px] overflow-auto relative pt-0">
+
+              <DropdownMenuLabel className="sticky top-0 bg-white z-10 border-b-[1px] border-gray-200 mb-1">
+                Notifications
+              </DropdownMenuLabel>
+
+              <DropdownMenuGroup className="flex flex-col gap-2">
+                {notifications.map((notification) => (
+                  <DropdownMenuItem
+                    key={notification.notification_id} // Use a unique key for React rendering
+                    onClick={() => navigate("/profile")}
+                    className="cursor-pointer flex flex-col items-start"
+                  >
+                    <div className="flex justify-center gap-3 cursor-pointer">
+                      <Avatar className="">
+                        <AvatarImage src="https://github.com/shadcn.png" />
+                        <AvatarFallback>CN</AvatarFallback>
+                      </Avatar>
+                      <div className="break-words">
+                        {notification.message}
+                      </div>
+                    </div>
+                    <div className="ml-[3.2rem] font-semibold">
+                      {timeAgo(notification.created_at)} {/* Display the relative time */}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Profile or Loading Avatar */}

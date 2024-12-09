@@ -191,8 +191,6 @@ function Forum() {
 
     useEffect(() => {
         fetchForumsAndProfiles();
-
-
     }, []);
 
     useEffect(() => {
@@ -462,7 +460,7 @@ function Forum() {
                     .insert({
                         forum_id: forumId,
                         uid: currentUserID,
-                        vote_type: "upvote", // Set the new vote to "upvote"
+                        vote_type: "downvote", // Set the new vote to "upvote"
                     });
 
                 if (insertError) {
