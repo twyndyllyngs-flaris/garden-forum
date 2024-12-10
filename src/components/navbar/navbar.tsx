@@ -39,6 +39,7 @@ type NotificationPayload = {
   created_at: string;
   forum_id: string | null;
   plant_id: string | null;
+  comment_id: string | null;
 };
 
 function Navbar() {
@@ -97,6 +98,7 @@ function Navbar() {
               created_at: payload.new.created_at ?? new Date().toISOString(),
               forum_id: payload.new.forum_id ?? null,
               plant_id: payload.new.plant_id ?? null,
+              comment_id: payload.new.comment_id ?? null,
             };
 
             setNotifications((prev) => [mappedNotification, ...prev]);
@@ -121,14 +123,14 @@ function Navbar() {
         const { data, error } = await supabase
           .from('notifications')
           .select('*')
-          .eq('recipient_id', user.id);
+          .eq('recipient_id', user?.id)
+          .order('created_at', { ascending: false });
 
         if (error) {
           console.error('Error fetching initial notifications:', error);
         } else {
           setNotifications(data || []);
           setUnreadCount((data || []).filter(n => !n.read).length);
-          console.log(data, "Asdfasdfasdf")
         }
       } catch (error) {
         console.error('Unexpected error:', error);
@@ -137,48 +139,6 @@ function Navbar() {
 
     fetchNotifications();
   }, [user?.id]);
-
-  // Handle notification click
-  const handleNotificationClick = (notification: NotificationPayload) => {
-    console.log("Notification clicked:", notification);
-
-    // Mark as read by updating Supabase table (if needed)
-    markNotificationAsRead(notification.notification_id);
-
-    // Handle specific actions based on notification type
-    if (notification.type === "comment") {
-      console.log("Navigating to the forum where the comment was made.");
-      // Implement navigation logic here if applicable
-    }
-
-    if (notification.type === "upvote") {
-      console.log("Handling upvote logic here.");
-    }
-
-    if (notification.type === "system") {
-      console.log("Handling system logic here.");
-    }
-
-    setUnreadCount((prev) => (prev > 0 ? prev - 1 : 0));
-  };
-
-  const markNotificationAsRead = async (notificationId: string) => {
-    const { error } = await supabase
-      .from("notifications")
-      .update({ read: true })
-      .match({ notification_id: notificationId });
-
-    if (error) {
-      console.error("Failed to mark notification as read:", error);
-    } else {
-      console.log("Notification marked as read.");
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.notification_id === notificationId ? { ...n, read: true } : n
-        )
-      );
-    }
-  };
 
   // Example: Display time in a relative way
   const timeAgo = (timestamp: string) => {
@@ -198,6 +158,52 @@ function Navbar() {
       navigate("/"); // Redirect to home page
     }
   };
+
+  const handleReadNotif = async (notification_id: string) => {
+    try {
+      // Update the `read` status in the database
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("notification_id", notification_id);
+
+      if (error) {
+        console.error("Error updating notification read status:", error.message);
+        return;
+      }
+
+      console.log(`Notification ${notification_id} marked as read`);
+
+      // Update local state for instant UI feedback
+      setNotifications((prev) =>
+        prev.map((notif) =>
+          notif.notification_id === notification_id
+            ? { ...notif, read: true }
+            : notif
+        )
+      );
+    } catch (err) {
+      console.error("Unexpected error in handleReadNotif:", err);
+    } finally {
+      setUnreadCount((prevCount) => prevCount - 1)
+    }
+  }
+
+  const navigateNotifaction = async (notification: NotificationPayload) => {
+    console.log(notification)
+    if (!notification) return;
+
+    if (notification.type === "System1") {
+      console.log(notification.message)
+    } else if (notification.type === "upvote") {
+      navigate(`/forum/${notification.forum_id}`)
+    } else if (notification.type === "comment") {
+      navigate(`/forum/${notification.forum_id}?comment_id=${notification.comment_id}`);
+    }
+
+    if (!notification.read)
+      handleReadNotif(notification.notification_id)
+  }
 
   return (
     <nav className="w-full h-16 min-h-16 flex justify-center items-center border-b border-gray-300 sticky top-0 z-10 bg-white">
@@ -234,16 +240,16 @@ function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-fit max-w-[300px] max-h-[600px] overflow-auto relative pt-0">
 
-              <DropdownMenuLabel className="sticky top-0 bg-white z-10 border-b-[1px] border-gray-200 mb-1">
-                Notifications
+              <DropdownMenuLabel className="sticky top-0 bg-white z-10 border-b-[1px] border-gray-200 mb-1" onClick={test}>
+                {notifications.length === 0 ? "You have no notifications." : "Notifications"}
               </DropdownMenuLabel>
 
               <DropdownMenuGroup className="flex flex-col gap-2">
                 {notifications.map((notification) => (
                   <DropdownMenuItem
                     key={notification.notification_id} // Use a unique key for React rendering
-                    onClick={() => navigate("/profile")}
-                    className="cursor-pointer flex flex-col items-start"
+                    onClick={() => navigateNotifaction(notification)}
+                    className={`${notification.read ? "" : "bg-gray-100"} cursor-pointer flex flex-col items-start focus:bg-gray-200`}
                   >
                     <div className="flex justify-center gap-3 cursor-pointer">
                       <Avatar className="">
@@ -278,7 +284,7 @@ function Navbar() {
         ) : user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex justify-center items-center gap-3 cursor-pointer">
+              <div className="flex justify-center items-center gap-3 cursor-pointer" >
                 <Label htmlFor="" className="text-md text-gray-700 cursor-pointer">
                   {user.user_metadata.displayName || "User"}
                 </Label>

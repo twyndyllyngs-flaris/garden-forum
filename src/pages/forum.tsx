@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../config/supabase/supabaseClient";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import "../styling/output.css";
 import "non.geist";
 
@@ -75,6 +75,7 @@ interface AlertDialogContent {
 function Forum() {
     const navigate = useNavigate();
     const { forum_id } = useParams(); // Extract forum_id from the URL
+    const [searchParams] = useSearchParams();
 
     const [forums, setForums] = useState<Forum[]>([]);
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
@@ -205,7 +206,7 @@ function Forum() {
                 console.error("Forum with the given forum_id not found.");
             }
         }
-    }, [forums]);
+    }, [forums, forum_id]);
 
 
     const toggleExpand = (forumId: string) => {
@@ -564,23 +565,25 @@ function Forum() {
     }
 
     const openForumDialog = async (forum: any) => {
+        // Fetch comments from Supabase
         const { data: comments, error: commentsError } = await supabase
             .from("comments")
             .select(`
-                    comment_id,
-                    forum_id,
-                    uid,
-                    parent_id,
-                    content,
-                    date_created,
-                    profiles(
-                        first_name,
-                        last_name
-                    )
-                `)
+                  comment_id,
+                  forum_id,
+                  uid,
+                  parent_id,
+                  content,
+                  date_created,
+                  profiles(
+                      first_name,
+                      last_name
+                  )
+              `)
             .eq("forum_id", forum.forum_id);
 
         if (commentsError) {
+            console.error('Error fetching comments:', commentsError);
             throw commentsError;
         }
 
@@ -592,16 +595,36 @@ function Forum() {
             content: origCommentInterface.content,
             date_created: origCommentInterface.date_created,
             first_name: Object.values(origCommentInterface.profiles)[1],
-            last_name: Object.values(origCommentInterface.profiles)[0]
-        }))
+            last_name: Object.values(origCommentInterface.profiles)[0],
+        }));
 
-        // Add forum_id to the URL
-        navigate(`/forum/${forum.forum_id}`);
+        const commentIdInSearch = searchParams.get('comment_id');
 
-        setOpenedForumComments(flattenedComments)
-        setOpenedForumData(forum)
+        let reorderedComments = flattenedComments;
+
+        if (commentIdInSearch) {
+            const specificComment = flattenedComments.find(
+                (comment) => comment.comment_id === commentIdInSearch
+            );
+
+            if (specificComment) {
+                console.log('Specific comment found, placing it first in line');
+                // Remove that specific comment from the general list
+                reorderedComments = flattenedComments.filter(
+                    (comment) => comment.comment_id !== commentIdInSearch
+                );
+                // Put the specific comment at the top of the list
+                reorderedComments = [specificComment, ...reorderedComments];
+            } else {
+                console.warn('Comment ID passed but not found in the fetched data');
+            }
+        }
+
+        // Render reordered comments list
+        setOpenedForumComments(reorderedComments);
+        setOpenedForumData(forum);
         setForumDialog(true);
-    }
+    };
 
     const closeForumDialog = async () => {
         setForumDialog(false);
@@ -757,172 +780,176 @@ function Forum() {
             <ForumsSidebar openCreateSpace={openCreateSpace} closeCreateSpace={closeCreateSpace} />
 
             <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
-                {forums.map((forum) => {
-                    const isUpvoted = upvoteStates[forum.forum_id] || false;
-                    const isDownvoted = downvoteStates[forum.forum_id] || false;
+                {forums.length == 0 ?
+                    <div className="text-gray-500 m-auto"> No forums available at the moment. </div>
 
-                    return (
-                        <Card
-                            key={forum.forum_id}
-                            className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
-                            onClick={() => openForumDialog(forum)}
-                        >
-                            <CardHeader className="relative">
-                                {forum.uid === loggedInUser?.id && (
-                                    <div className="absolute top-1 right-3">
-                                        <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <div className="flex justify-center items-center gap-3 cursor-pointer">
-                                                        <MdMoreHoriz className="w-6 h-6" color="gray" />
-                                                    </div>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
-                                                    <DropdownMenuGroup>
-                                                        <DropdownMenuItem
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                openDeletePostDialog(forum.forum_id)
-                                                            }} className="cursor-pointer">
-                                                            {/* <UserIcon /> */}
-                                                            <div>Delete</div>
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuGroup>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                    : forums.map((forum) => {
+                        const isUpvoted = upvoteStates[forum.forum_id] || false;
+                        const isDownvoted = downvoteStates[forum.forum_id] || false;
+
+                        return (
+                            <Card
+                                key={forum.forum_id}
+                                className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
+                                onClick={() => openForumDialog(forum)}
+                            >
+                                <CardHeader className="relative">
+                                    {forum.uid === loggedInUser?.id && (
+                                        <div className="absolute top-1 right-3">
+                                            <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <div className="flex justify-center items-center gap-3 cursor-pointer">
+                                                            <MdMoreHoriz className="w-6 h-6" color="gray" />
+                                                        </div>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
+                                                        <DropdownMenuGroup>
+                                                            <DropdownMenuItem
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    openDeletePostDialog(forum.forum_id)
+                                                                }} className="cursor-pointer">
+                                                                {/* <UserIcon /> */}
+                                                                <div>Delete</div>
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuGroup>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-
-                                <div className="w-full flex items-center gap-3 cursor-pointer">
-                                    <Avatar onClick={(e) => e.stopPropagation()}>
-                                        <AvatarImage src="https://github.com/shadcn.png" />
-                                        <AvatarFallback>
-                                            {forum.profiles?.first_name?.[0] || "?"}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <Label
-                                        htmlFor=""
-                                        className="text-md text-gray-700 cursor-pointer"
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {forum.profiles?.first_name}{" "}
-                                        {forum.profiles?.last_name}
-                                    </Label>
-                                    <Label className="text-gray-500 ml-auto">
-                                        {new Date(forum.date_created).toLocaleDateString()}
-                                    </Label>
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <CardTitle className="text-md text-gray-700">
-                                    {forum.title}
-                                </CardTitle>
-                                <CardDescription className="mt-2">
-                                    {expandedStates[forum.forum_id]
-                                        ? forum.description
-                                        : forum.description.slice(0, 100) + "..."}
-                                    {forum.description.length > 100 && (
-                                        <span
-                                            className="text-blue-500 cursor-pointer ml-2"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                toggleExpand(forum.forum_id)
-                                            }
-                                            }
-                                        >
-                                            {expandedStates[forum.forum_id]
-                                                ? "See less"
-                                                : "See more"}
-                                        </span>
                                     )}
-                                </CardDescription>
-                                {forum.links_imgs?.length > 0 && (
-                                    <div className="bg-gray-200 flex items-center justify-center mt-4">
-                                        <img
-                                            src={forum.links_imgs[0]}
-                                            alt={forum.title}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                )}
-                            </CardContent>
-                            <CardFooter>
-                                <div className="flex gap-1">
-                                    <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
-                                        <div
-                                            className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
-                                                }`}
-                                            onClick={() => toggleUpvote(forum.forum_id)}
+
+                                    <div className="w-full flex items-center gap-3 cursor-pointer">
+                                        <Avatar onClick={(e) => e.stopPropagation()}>
+                                            <AvatarImage src="https://github.com/shadcn.png" />
+                                            <AvatarFallback>
+                                                {forum.profiles?.first_name?.[0] || "?"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <Label
+                                            htmlFor=""
+                                            className="text-md text-gray-700 cursor-pointer"
+                                            onClick={(e) => e.stopPropagation()}
                                         >
-                                            <svg
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
+                                            {forum.profiles?.first_name}{" "}
+                                            {forum.profiles?.last_name}
+                                        </Label>
+                                        <Label className="text-gray-500 ml-auto">
+                                            {new Date(forum.date_created).toLocaleDateString()}
+                                        </Label>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <CardTitle className="text-md text-gray-700">
+                                        {forum.title}
+                                    </CardTitle>
+                                    <CardDescription className="mt-2">
+                                        {expandedStates[forum.forum_id]
+                                            ? forum.description
+                                            : forum.description.slice(0, 100) + "..."}
+                                        {forum.description.length > 100 && (
+                                            <span
+                                                className="text-blue-500 cursor-pointer ml-2"
+                                                onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    toggleExpand(forum.forum_id)
+                                                }
+                                                }
                                             >
-                                                <path
-                                                    d="M12 4 3 15h6v5h6v-5h6z"
-                                                    stroke="#666"
-                                                    strokeWidth="1.5"
-                                                    fill={isUpvoted ? "#92c78b" : "none"}
-                                                    strokeLinejoin="round"
-                                                ></path>
-                                            </svg>
-                                            <div className="text-sm font-semibold text-gray-700">
-                                                Upvote{" "}
-                                                <span className="font-normal text-sm">
-                                                    ⧇ {forum.upvotes}
+                                                {expandedStates[forum.forum_id]
+                                                    ? "See less"
+                                                    : "See more"}
+                                            </span>
+                                        )}
+                                    </CardDescription>
+                                    {forum.links_imgs?.length > 0 && (
+                                        <div className="bg-gray-200 flex items-center justify-center mt-4">
+                                            <img
+                                                src={forum.links_imgs[0]}
+                                                alt={forum.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter>
+                                    <div className="flex gap-1">
+                                        <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                            <div
+                                                className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
+                                                    }`}
+                                                onClick={() => toggleUpvote(forum.forum_id)}
+                                            >
+                                                <svg
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        d="M12 4 3 15h6v5h6v-5h6z"
+                                                        stroke="#666"
+                                                        strokeWidth="1.5"
+                                                        fill={isUpvoted ? "#92c78b" : "none"}
+                                                        strokeLinejoin="round"
+                                                    ></path>
+                                                </svg>
+                                                <div className="text-sm font-semibold text-gray-700">
+                                                    Upvote{" "}
+                                                    <span className="font-normal text-sm">
+                                                        ⧇ {forum.upvotes}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div
+                                                className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
+                                                    }`}
+                                                onClick={() => toggleDownvote(forum.forum_id)}
+                                            >
+                                                <svg
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        d="m12 20 9-11h-6V4H9v5H3z"
+                                                        stroke="#666"
+                                                        strokeWidth="1.5"
+                                                        fill={isDownvoted ? "#cc4767" : "none"}
+                                                        strokeLinejoin="round"
+                                                    ></path>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                        <div className="box-border flex hover:bg-gray-100 rounded-full">
+                                            <div className="flex items-center gap-1 p-1 cursor-pointer select-none">
+                                                <svg
+                                                    width="24"
+                                                    height="24"
+                                                    viewBox="0 0 24 24"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        d="M12.071 18.86c4.103 0 7.429-3.102 7.429-6.93C19.5 8.103 16.174 5 12.071 5s-7.429 3.103-7.429 6.93c0 1.291.379 2.5 1.037 3.534.32.501-1.551 3.058-1.112 3.467.46.429 3.236-1.295 3.803-.99 1.09.585 2.354.92 3.701.92Z"
+                                                        className="icon_svg-stroke icon_svg-fill"
+                                                        stroke="#666"
+                                                        strokeWidth="1.5"
+                                                        fill="none"
+                                                    ></path>
+                                                </svg>
+                                                <span className="text-sm font-normal text-gray-700">
+                                                    {forum.count_comments}
                                                 </span>
                                             </div>
                                         </div>
-                                        <div
-                                            className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
-                                                }`}
-                                            onClick={() => toggleDownvote(forum.forum_id)}
-                                        >
-                                            <svg
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    d="m12 20 9-11h-6V4H9v5H3z"
-                                                    stroke="#666"
-                                                    strokeWidth="1.5"
-                                                    fill={isDownvoted ? "#cc4767" : "none"}
-                                                    strokeLinejoin="round"
-                                                ></path>
-                                            </svg>
-                                        </div>
                                     </div>
-                                    <div className="box-border flex hover:bg-gray-100 rounded-full">
-                                        <div className="flex items-center gap-1 p-1 cursor-pointer select-none">
-                                            <svg
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    d="M12.071 18.86c4.103 0 7.429-3.102 7.429-6.93C19.5 8.103 16.174 5 12.071 5s-7.429 3.103-7.429 6.93c0 1.291.379 2.5 1.037 3.534.32.501-1.551 3.058-1.112 3.467.46.429 3.236-1.295 3.803-.99 1.09.585 2.354.92 3.701.92Z"
-                                                    className="icon_svg-stroke icon_svg-fill"
-                                                    stroke="#666"
-                                                    strokeWidth="1.5"
-                                                    fill="none"
-                                                ></path>
-                                            </svg>
-                                            <span className="text-sm font-normal text-gray-700">
-                                                {forum.count_comments}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardFooter>
-                        </Card>
-                    );
-                })}
+                                </CardFooter>
+                            </Card>
+                        );
+                    })}
+                { }
             </div>
 
             <AlertDialog open={isCreateSpaceOpen} onOpenChange={setCreateSpace}>
@@ -1059,9 +1086,9 @@ function Forum() {
 
                                 <Separator className="mt-4" />
 
-                                <div className="w-full flex flex-col gap-4 mt-4">
-                                    {openedForumComments?.map((comment: any) => (
-                                        <div key={comment.comment_id} className="flex flex-col">
+                                <div className="w-full flex flex-col gap-4 mt-4 mb-3">
+                                    {openedForumComments?.map((comment: any, index: number) => (
+                                        <div key={comment.comment_id} className={`flex flex-col ${index == 0 && searchParams.get("comment_id") === comment.comment_id ? "border-gray-200 border shadow-sm p-3 box-border bg-gray-50" : ""}`}>
                                             <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
                                                 {/* Avatar */}
                                                 <Avatar
