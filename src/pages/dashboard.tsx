@@ -7,6 +7,7 @@ import '../styling/output.css';
 import Navbar from "../components/navbar/navbar";
 import Guides from "./guides";
 import Forum from "./forum";
+import Profile from "./profile";
 
 function Dashboard() {
   const location = useLocation();
@@ -18,6 +19,7 @@ function Dashboard() {
       <div className="flex-1 overflow-y-auto">
         {location.pathname.startsWith("/guides") && <Guides />}
         {location.pathname.startsWith("/forum") && <Forum />}
+        {location.pathname.startsWith("/profile") && <Profile />}
       </div>
     </div>
   );

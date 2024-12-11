@@ -827,6 +827,7 @@ function Forum() {
                                                 {forum.profiles?.first_name?.[0] || "?"}
                                             </AvatarFallback>
                                         </Avatar>
+
                                         <Label
                                             htmlFor=""
                                             className="text-md text-gray-700 cursor-pointer"
@@ -835,6 +836,9 @@ function Forum() {
                                             {forum.profiles?.first_name}{" "}
                                             {forum.profiles?.last_name}
                                         </Label>
+
+                                        {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
+
                                         <Label className="text-gray-500 ml-auto">
                                             {new Date(forum.date_created).toLocaleDateString()}
                                         </Label>
@@ -844,7 +848,7 @@ function Forum() {
                                     <CardTitle className="text-md text-gray-700">
                                         {forum.title}
                                     </CardTitle>
-                                    <CardDescription className="mt-2">
+                                    <CardDescription className="mt-2 whitespace-pre-wrap">
                                         {expandedStates[forum.forum_id]
                                             ? forum.description
                                             : forum.description.slice(0, 100) + "..."}
@@ -1025,7 +1029,7 @@ function Forum() {
                                 <div className="text-md font-semibold text-gray-800 mb-4">
                                     {openedForumData?.title}
                                 </div>
-                                <div className="text-sm text-gray-600 leading-relaxed">
+                                <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
                                     {openedForumData?.description}
                                 </div>
 
@@ -1096,7 +1100,7 @@ function Forum() {
                                                     className="flex-shrink-0"
                                                 >
                                                     <AvatarImage src="https://github.com/shadcn.png" />
-                                                    <AvatarFallback>
+                                                    <AvatarFallback className="">
                                                         {comment.first_name + " " + comment.last_name}
                                                     </AvatarFallback>
                                                 </Avatar>

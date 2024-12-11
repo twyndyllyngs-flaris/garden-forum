@@ -20,7 +20,7 @@ function App() {
       <Route path="/forum" element={<Dashboard />} />
       <Route path="/forum/:forum_id" element={<Dashboard />} /> {/* Add this route */}
       <Route path="/faq" element={<Faq />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route path="/profile" element={<Dashboard />} />
       <Route path="/settings" element={<Profile />} />
     </Routes>
   );
