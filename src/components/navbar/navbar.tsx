@@ -298,7 +298,7 @@ function Navbar() {
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                <DropdownMenuItem onClick={() => navigate(`/profile/${user.id}`)} className="cursor-pointer">
                   <UserIcon />
                   <div>Profile</div>
                 </DropdownMenuItem>

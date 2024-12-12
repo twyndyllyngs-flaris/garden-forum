@@ -821,7 +821,7 @@ function Forum() {
                                     )}
 
                                     <div className="w-full flex items-center gap-3 cursor-pointer">
-                                        <Avatar onClick={(e) => e.stopPropagation()}>
+                                        <Avatar id="avatar" onClick={(e) => {e.stopPropagation(); navigate(`/profile/${forum.uid}`)}}>
                                             <AvatarImage src="https://github.com/shadcn.png" />
                                             <AvatarFallback>
                                                 {forum.profiles?.first_name?.[0] || "?"}
@@ -829,9 +829,9 @@ function Forum() {
                                         </Avatar>
 
                                         <Label
-                                            htmlFor=""
+                                            htmlFor="avatar"
                                             className="text-md text-gray-700 cursor-pointer"
-                                            onClick={(e) => e.stopPropagation()}
+                                            onClick={(e) => {e.stopPropagation(); navigate(`/profile/${forum.uid}`)}}
                                         >
                                             {forum.profiles?.first_name}{" "}
                                             {forum.profiles?.last_name}
@@ -953,7 +953,6 @@ function Forum() {
                             </Card>
                         );
                     })}
-                { }
             </div>
 
             <AlertDialog open={isCreateSpaceOpen} onOpenChange={setCreateSpace}>
@@ -1003,7 +1002,7 @@ function Forum() {
 
                         <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
                             <div className="flex gap-2 items-center">
-                                <Avatar onClick={(e) => e.stopPropagation()}>
+                                <Avatar onClick={(e) => {e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`)}} className="cursor-pointer">
                                     <AvatarImage src="https://github.com/shadcn.png" />
                                     <AvatarFallback>
                                         CN
@@ -1012,7 +1011,7 @@ function Forum() {
                                 <Label
                                     htmlFor=""
                                     className="text-md text-gray-700 cursor-pointer"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => {e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`)}}
                                 >
                                     {openedForumData?.profiles?.first_name}{" "}
                                     {openedForumData?.profiles?.last_name}
@@ -1096,8 +1095,8 @@ function Forum() {
                                             <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
                                                 {/* Avatar */}
                                                 <Avatar
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="flex-shrink-0"
+                                                    onClick={(e) => {e.stopPropagation(); navigate(`/profile/${comment.uid}`)}}
+                                                    className="flex-shrink-0 cursor-pointer"
                                                 >
                                                     <AvatarImage src="https://github.com/shadcn.png" />
                                                     <AvatarFallback className="">
@@ -1111,6 +1110,7 @@ function Forum() {
                                                     <Label
                                                         htmlFor=""
                                                         className="text-md text-gray-700 cursor-pointer"
+                                                        onClick={(e) => {e.stopPropagation(); navigate(`/profile/${comment.uid}`)}}
                                                     >
                                                         {comment.first_name + " " + comment.last_name}
                                                     </Label>
