@@ -203,13 +203,16 @@ function Profile() {
                 .select(`*`)
                 .eq("uid", uid);
 
-            if (forumsError) throw forumsError;
+            if (forumsError) {
+                console.error(forumsError);
+                return;
+            }
 
-            setProfile(userProfile[0])
-        }
+            setProfile(userProfile[0]);
+        };
 
-        getUserProfile()
-    }, [uid])
+        getUserProfile();
+    }, [uid]);
 
     const toggleExpand = (forumId: string) => {
         setExpandedStates((prevState) => ({
@@ -693,12 +696,17 @@ function Profile() {
         return new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(date);
     };
 
-    const test = async () => {
-        console.log(loggedInUser)
-        console.log(uid)
-        console.log(profile)
+    const goToProfile = async (uid: string) => {
+        navigate(`/profile/${uid}`)
+        closeForumDialog()
     }
 
+    const test = async () => {
+        console.log("logged in user:", loggedInUser)
+        console.log("uid:", uid)
+        console.log("Profile:", profile)
+        console.log("Forums: ", forums)
+    }
 
     return (
         <div className="min-h-full overflow-auto flex justify-center">
@@ -733,7 +741,7 @@ function Profile() {
 
                 {/* my posts */}
                 <div className="flex justify-center">
-                    <Tabs defaultValue="My Posts" className="w-[500px] rounded-none">
+                    <Tabs key={uid} defaultValue="My Posts" className="w-[500px] rounded-none">
                         <TabsList className="flex w-full gap-6 bg-transparent rounded-none relative -top-[5px]">
                             <TabsTrigger
                                 value="My Posts"
@@ -933,7 +941,7 @@ function Profile() {
                             </div>
                         </TabsContent>
 
-                        {loggedInUser?.id === profile.uid &&
+                        {loggedInUser?.id === uid &&
                             <TabsContent value="Upvoted Posts">
                                 <div className="flex flex-col gap-6">
                                     {forums.filter((forum) => upvoteStates[forum.forum_id]).length === 0 ?
@@ -979,7 +987,7 @@ function Profile() {
                                                             )}
 
                                                             <div className="w-full flex items-center gap-3 cursor-pointer">
-                                                                <Avatar onClick={(e) => e.stopPropagation()}>
+                                                                <Avatar onClick={(e) => { e.stopPropagation(); goToProfile(forum.uid) }}>
                                                                     <AvatarImage src="https://github.com/shadcn.png" />
                                                                     <AvatarFallback>
                                                                         {forum.profiles?.first_name?.[0] || "?"}
@@ -989,7 +997,7 @@ function Profile() {
                                                                 <Label
                                                                     htmlFor=""
                                                                     className="text-md text-gray-700 cursor-pointer"
-                                                                    onClick={(e) => e.stopPropagation()}
+                                                                    onClick={(e) => { e.stopPropagation(); goToProfile(forum.uid) }}
                                                                 >
                                                                     {forum.profiles?.first_name}{" "}
                                                                     {forum.profiles?.last_name}
@@ -1146,7 +1154,10 @@ function Profile() {
 
                         <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
                             <div className="flex gap-2 items-center">
-                                <Avatar onClick={(e) => { e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`) }} className="cursor-pointer">
+                                <Avatar
+                                    onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "")}}
+                                    className="cursor-pointer"
+                                >
                                     <AvatarImage src="https://github.com/shadcn.png" />
                                     <AvatarFallback>
                                         CN
@@ -1155,7 +1166,7 @@ function Profile() {
                                 <Label
                                     htmlFor=""
                                     className="text-md text-gray-700 cursor-pointer"
-                                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`) }}
+                                    onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "")}}
                                 >
                                     {openedForumData?.profiles?.first_name}{" "}
                                     {openedForumData?.profiles?.last_name}
@@ -1239,7 +1250,7 @@ function Profile() {
                                             <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
                                                 {/* Avatar */}
                                                 <Avatar
-                                                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${comment.uid}`) }}
+                                                    onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid)}}
                                                     className="flex-shrink-0 cursor-pointer"
                                                 >
                                                     <AvatarImage src="https://github.com/shadcn.png" />
@@ -1254,7 +1265,7 @@ function Profile() {
                                                     <Label
                                                         htmlFor=""
                                                         className="text-md text-gray-700 cursor-pointer"
-                                                        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${comment.uid}`) }}
+                                                        onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid)}}
                                                     >
                                                         {comment.first_name + " " + comment.last_name}
                                                     </Label>
@@ -1273,9 +1284,9 @@ function Profile() {
                                                     {new Date(comment.date_created).toLocaleDateString()}
                                                 </Label>
 
-                                                <Button className="text-gray-700 m-0 p-0" variant="link">
+                                                {/* <Button className="text-gray-700 m-0 p-0" variant="link">
                                                     Reply
-                                                </Button>
+                                                </Button> */}
 
                                                 {/* Conditionally show Delete button only for the logged-in user's comments */}
                                                 {comment.uid === loggedInUser?.id && (

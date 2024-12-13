@@ -1129,9 +1129,9 @@ function Forum() {
                                                     {new Date(comment.date_created).toLocaleDateString()}
                                                 </Label>
 
-                                                <Button className="text-gray-700 m-0 p-0" variant="link">
+                                                {/* <Button className="text-gray-700 m-0 p-0" variant="link">
                                                     Reply
-                                                </Button>
+                                                </Button> */}
 
                                                 {/* Conditionally show Delete button only for the logged-in user's comments */}
                                                 {comment.uid === loggedInUser?.id && (
