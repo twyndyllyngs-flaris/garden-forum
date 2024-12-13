@@ -16,7 +16,7 @@ function Dashboard() {
     <div className="w-screen h-screen flex flex-col">
       <Navbar />
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto w-full h-full">
         {location.pathname.startsWith("/guides") && <Guides />}
         {location.pathname.startsWith("/forum") && <Forum />}
         {location.pathname.startsWith("/profile") && <Profile />}

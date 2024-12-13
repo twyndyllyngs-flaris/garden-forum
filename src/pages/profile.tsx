@@ -85,7 +85,7 @@ function Profile() {
 
     //states
     const [loggedInUser, setLoggedInUser] = useState<any>(null)
-    const [profile, setProfile] = useState<any>({})
+    const [profile, setProfile] = useState<any>(null)
 
     const [forums, setForums] = useState<Forum[]>([]);
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
@@ -106,6 +106,7 @@ function Profile() {
         cancel: () => { return },
     })
     const [deleteForumID, setDeleteForumID] = useState<string | null>(null)
+    const [isUserExist, setUserExist] = useState(false)
 
     const fetchForumsAndProfiles = async () => {
         const { data: { user } } = await supabase.auth.getUser()
@@ -208,11 +209,19 @@ function Profile() {
                 return;
             }
 
+            if (userProfile.length === 0) {
+                setUserExist(false)
+                return;
+            }
+
             setProfile(userProfile[0]);
+            setUserExist(true)
         };
 
         getUserProfile();
     }, [uid]);
+
+
 
     const toggleExpand = (forumId: string) => {
         setExpandedStates((prevState) => ({
@@ -709,632 +718,638 @@ function Profile() {
     }
 
     return (
-        <div className="min-h-full overflow-auto flex justify-center">
-            <div className="w-[50%] box-border p-10 border-l border-r border-gray-200">
-                {/* profile labels */}
-                <div className="flex bg-gray-100 rounded">
-                    <div className="w-[400px] h-60 flex justify-center items-center">
-                        <Avatar onClick={(e) => e.stopPropagation()} className="w-[200px] h-[200px]">
-                            <AvatarImage src="https://github.com/shadcn.png" />
-                            <AvatarFallback>
-                                ""
-                            </AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <div className="w-full flex flex-col gap-3 justify-center">
-                        <div className="flex gap-4 items-center">
-                            <h1 className="font-semibold text-gray-700 text-lg">{profile?.first_name + " " + profile?.last_name}</h1>
-                            {loggedInUser?.id === uid && <Button variant="outline" className="hover:bg-gray-200 text-sm" size="sm">Edit Profile</Button>}
-                        </div>
-
-                        <h2 className="font-semibold text-gray-700">{forums.filter((forum) => forum.uid === uid).length} posts</h2>
-                        <h3 className="text-gray-700">{profile.description ? profile.description : "No description available"}</h3>
-                        <div className="flex items-center mt-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-calendar-days mr-2 h-4 w-4 opacity-70"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>
-                            <h4 className=" text-gray-500" onClick={test}>Joined since {loggedInUser ? formatDateToMonthYear(loggedInUser?.created_at) : "2024"}</h4>
-                        </div>
-
-                    </div>
-                </div>
-
-                <Separator className="mt-6" />
-
-                {/* my posts */}
-                <div className="flex justify-center">
-                    <Tabs key={uid} defaultValue="My Posts" className="w-[500px] rounded-none">
-                        <TabsList className="flex w-full gap-6 bg-transparent rounded-none relative -top-[5px]">
-                            <TabsTrigger
-                                value="My Posts"
-                                className="transition-none flex gap-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-t-2 
-                                border-gray-600 rounded-none data-[state=active]:text-gray-700">
-                                <svg aria-label="" className="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12"><title></title><rect fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" width="18" x="3" y="3"></rect><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="9.015" x2="9.015" y1="3" y2="21"></line><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="14.985" x2="14.985" y1="3" y2="21"></line><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="21" x2="3" y1="9.015" y2="9.015"></line><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="21" x2="3" y1="14.985" y2="14.985"></line></svg>
-                                {uid === loggedInUser?.id ? "My" : profile.first_name + "'s"} Posts
-                            </TabsTrigger>
-                            {loggedInUser?.id === profile.uid &&
-                                <TabsTrigger
-                                    value="Upvoted Posts"
-                                    className="transition-none flex gap-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-t-2 
-                                border-gray-600 rounded-none data-[state=active]:text-gray-700">
-                                    <svg aria-label="" className="x1lliihq x1n2onr6 x1roi4f4" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12"><title></title><polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon></svg>
-                                    Upvoted Posts
-                                </TabsTrigger>
-                            }
-                        </TabsList>
-
-                        <TabsContent value="My Posts">
-                            <div className="flex flex-col gap-6">
-                                {forums.filter((forum) => forum.uid === uid).length === 0 ?
-                                    <div className="text-gray-500 mt-10 mx-auto"> Your forums will show here. </div>
-
-                                    : forums
-                                        .filter((forum) => forum.uid === uid)
-                                        .map((forum) => {
-                                            const isUpvoted = upvoteStates[forum.forum_id] || false;
-                                            const isDownvoted = downvoteStates[forum.forum_id] || false;
-
-                                            return (
-                                                <Card
-                                                    key={forum.forum_id}
-                                                    className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
-                                                    onClick={() => openForumDialog(forum)}
-                                                >
-                                                    <CardHeader className="relative">
-                                                        {forum.uid === loggedInUser?.id && (
-                                                            <div className="absolute top-1 right-3">
-                                                                <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
-                                                                    <DropdownMenu>
-                                                                        <DropdownMenuTrigger asChild>
-                                                                            <div className="flex justify-center items-center gap-3 cursor-pointer">
-                                                                                <MdMoreHoriz className="w-6 h-6" color="gray" />
-                                                                            </div>
-                                                                        </DropdownMenuTrigger>
-                                                                        <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
-                                                                            <DropdownMenuGroup>
-                                                                                <DropdownMenuItem
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        openDeletePostDialog(forum.forum_id)
-                                                                                    }} className="cursor-pointer">
-                                                                                    {/* <UserIcon /> */}
-                                                                                    <div>Delete</div>
-                                                                                </DropdownMenuItem>
-                                                                            </DropdownMenuGroup>
-                                                                        </DropdownMenuContent>
-                                                                    </DropdownMenu>
-                                                                </div>
-                                                            </div>
-                                                        )}
-
-                                                        <div className="w-full flex items-center gap-3 cursor-pointer">
-                                                            <Avatar onClick={(e) => e.stopPropagation()}>
-                                                                <AvatarImage src="https://github.com/shadcn.png" />
-                                                                <AvatarFallback>
-                                                                    {forum.profiles?.first_name?.[0] || "?"}
-                                                                </AvatarFallback>
-                                                            </Avatar>
-
-                                                            <Label
-                                                                htmlFor=""
-                                                                className="text-md text-gray-700 cursor-pointer"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                {forum.profiles?.first_name}{" "}
-                                                                {forum.profiles?.last_name}
-                                                            </Label>
-
-                                                            {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
-
-                                                            <Label className="text-gray-500 ml-auto">
-                                                                {new Date(forum.date_created).toLocaleDateString()}
-                                                            </Label>
-                                                        </div>
-                                                    </CardHeader>
-                                                    <CardContent>
-                                                        <CardTitle className="text-md text-gray-700">
-                                                            {forum.title}
-                                                        </CardTitle>
-                                                        <CardDescription className="mt-2 whitespace-pre-wrap">
-                                                            {expandedStates[forum.forum_id]
-                                                                ? forum.description
-                                                                : forum.description.slice(0, 100) + "..."}
-                                                            {forum.description.length > 100 && (
-                                                                <span
-                                                                    className="text-blue-500 cursor-pointer ml-2"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        toggleExpand(forum.forum_id)
-                                                                    }
-                                                                    }
-                                                                >
-                                                                    {expandedStates[forum.forum_id]
-                                                                        ? "See less"
-                                                                        : "See more"}
-                                                                </span>
-                                                            )}
-                                                        </CardDescription>
-                                                        {forum.links_imgs?.length > 0 && (
-                                                            <div className="bg-gray-200 flex items-center justify-center mt-4">
-                                                                <img
-                                                                    src={forum.links_imgs[0]}
-                                                                    alt={forum.title}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    </CardContent>
-                                                    <CardFooter>
-                                                        <div className="flex gap-1">
-                                                            <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
-                                                                <div
-                                                                    className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
-                                                                        }`}
-                                                                    onClick={() => toggleUpvote(forum.forum_id)}
-                                                                >
-                                                                    <svg
-                                                                        width="24"
-                                                                        height="24"
-                                                                        viewBox="0 0 24 24"
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                    >
-                                                                        <path
-                                                                            d="M12 4 3 15h6v5h6v-5h6z"
-                                                                            stroke="#666"
-                                                                            strokeWidth="1.5"
-                                                                            fill={isUpvoted ? "#92c78b" : "none"}
-                                                                            strokeLinejoin="round"
-                                                                        ></path>
-                                                                    </svg>
-                                                                    <div className="text-sm font-semibold text-gray-700">
-                                                                        Upvote{" "}
-                                                                        <span className="font-normal text-sm">
-                                                                            ⧇ {forum.upvotes}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                                <div
-                                                                    className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
-                                                                        }`}
-                                                                    onClick={() => toggleDownvote(forum.forum_id)}
-                                                                >
-                                                                    <svg
-                                                                        width="24"
-                                                                        height="24"
-                                                                        viewBox="0 0 24 24"
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                    >
-                                                                        <path
-                                                                            d="m12 20 9-11h-6V4H9v5H3z"
-                                                                            stroke="#666"
-                                                                            strokeWidth="1.5"
-                                                                            fill={isDownvoted ? "#cc4767" : "none"}
-                                                                            strokeLinejoin="round"
-                                                                        ></path>
-                                                                    </svg>
-                                                                </div>
-                                                            </div>
-                                                            <div className="box-border flex hover:bg-gray-100 rounded-full">
-                                                                <div className="flex items-center gap-1 p-1 cursor-pointer select-none">
-                                                                    <svg
-                                                                        width="24"
-                                                                        height="24"
-                                                                        viewBox="0 0 24 24"
-                                                                        xmlns="http://www.w3.org/2000/svg"
-                                                                    >
-                                                                        <path
-                                                                            d="M12.071 18.86c4.103 0 7.429-3.102 7.429-6.93C19.5 8.103 16.174 5 12.071 5s-7.429 3.103-7.429 6.93c0 1.291.379 2.5 1.037 3.534.32.501-1.551 3.058-1.112 3.467.46.429 3.236-1.295 3.803-.99 1.09.585 2.354.92 3.701.92Z"
-                                                                            className="icon_svg-stroke icon_svg-fill"
-                                                                            stroke="#666"
-                                                                            strokeWidth="1.5"
-                                                                            fill="none"
-                                                                        ></path>
-                                                                    </svg>
-                                                                    <span className="text-sm font-normal text-gray-700">
-                                                                        {forum.count_comments}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </CardFooter>
-                                                </Card>
-                                            );
-                                        })}
+        <div className={`h-full ${isUserExist ? "" : "flex justify-center items-center"}`}>
+            {isUserExist ?
+                <div className="min-h-full overflow-auto flex justify-center">
+                    <div className="w-[50%] box-border p-10 border-l border-r border-gray-200">
+                        {/* profile labels */}
+                        <div className="flex bg-gray-100 rounded">
+                            <div className="w-[400px] h-60 flex justify-center items-center">
+                                <Avatar onClick={(e) => e.stopPropagation()} className="w-[200px] h-[200px]">
+                                    <AvatarImage src="https://github.com/shadcn.png" />
+                                    <AvatarFallback>
+                                        ""
+                                    </AvatarFallback>
+                                </Avatar>
                             </div>
-                        </TabsContent>
+                            <div className="w-full flex flex-col gap-3 justify-center">
+                                <div className="flex gap-4 items-center">
+                                    <h1 className="font-semibold text-gray-700 text-lg">{profile?.first_name + " " + profile?.last_name}</h1>
+                                    {loggedInUser?.id === uid && <Button variant="outline" className="hover:bg-gray-200 text-sm" size="sm">Edit Profile</Button>}
+                                </div>
 
-                        {loggedInUser?.id === uid &&
-                            <TabsContent value="Upvoted Posts">
-                                <div className="flex flex-col gap-6">
-                                    {forums.filter((forum) => upvoteStates[forum.forum_id]).length === 0 ?
-                                        <div className="text-gray-500 mt-10 mx-auto"> Your upvoted forums will show here. </div>
+                                <h2 className="font-semibold text-gray-700">{forums.filter((forum) => forum.uid === uid).length} posts</h2>
+                                <h3 className="text-gray-700">{profile && profile.description ? profile.description : "No description available"}</h3>
+                                <div className="flex items-center mt-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="lucide lucide-calendar-days mr-2 h-4 w-4 opacity-70"><path d="M8 2v4"></path><path d="M16 2v4"></path><rect width="18" height="18" x="3" y="4" rx="2"></rect><path d="M3 10h18"></path><path d="M8 14h.01"></path><path d="M12 14h.01"></path><path d="M16 14h.01"></path><path d="M8 18h.01"></path><path d="M12 18h.01"></path><path d="M16 18h.01"></path></svg>
+                                    <h4 className=" text-gray-500" onClick={test}>Joined since {loggedInUser ? formatDateToMonthYear(loggedInUser?.created_at) : "2024"}</h4>
+                                </div>
 
-                                        : forums
-                                            .filter((forum) => upvoteStates[forum.forum_id])
-                                            .map((forum) => {
-                                                const isUpvoted = upvoteStates[forum.forum_id] || false;
-                                                const isDownvoted = downvoteStates[forum.forum_id] || false;
+                            </div>
+                        </div>
 
-                                                return (
-                                                    <Card
-                                                        key={forum.forum_id}
-                                                        className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
-                                                        onClick={() => openForumDialog(forum)}
-                                                    >
-                                                        <CardHeader className="relative">
-                                                            {forum.uid === loggedInUser?.id && (
-                                                                <div className="absolute top-1 right-3">
-                                                                    <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
-                                                                        <DropdownMenu>
-                                                                            <DropdownMenuTrigger asChild>
-                                                                                <div className="flex justify-center items-center gap-3 cursor-pointer">
-                                                                                    <MdMoreHoriz className="w-6 h-6" color="gray" />
-                                                                                </div>
-                                                                            </DropdownMenuTrigger>
-                                                                            <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
-                                                                                <DropdownMenuGroup>
-                                                                                    <DropdownMenuItem
-                                                                                        onClick={(e) => {
-                                                                                            e.stopPropagation();
-                                                                                            openDeletePostDialog(forum.forum_id)
-                                                                                        }} className="cursor-pointer">
-                                                                                        {/* <UserIcon /> */}
-                                                                                        <div>Delete</div>
-                                                                                    </DropdownMenuItem>
-                                                                                </DropdownMenuGroup>
-                                                                            </DropdownMenuContent>
-                                                                        </DropdownMenu>
+                        <Separator className="mt-6" />
+
+                        {/* my posts */}
+                        <div className="flex justify-center">
+                            <Tabs key={uid} defaultValue="My Posts" className="w-[500px] rounded-none">
+                                <TabsList className="flex w-full gap-6 bg-transparent rounded-none relative -top-[5px]">
+                                    <TabsTrigger
+                                        value="My Posts"
+                                        className="transition-none flex gap-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-t-2 
+                        border-gray-600 rounded-none data-[state=active]:text-gray-700">
+                                        <svg aria-label="" className="x1lliihq x1n2onr6 x5n08af" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12"><title></title><rect fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" width="18" x="3" y="3"></rect><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="9.015" x2="9.015" y1="3" y2="21"></line><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="14.985" x2="14.985" y1="3" y2="21"></line><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="21" x2="3" y1="9.015" y2="9.015"></line><line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="21" x2="3" y1="14.985" y2="14.985"></line></svg>
+                                        {uid === loggedInUser?.id ? "My" : profile && profile.first_name + "'s"} Posts
+                                    </TabsTrigger>
+                                    {loggedInUser?.id === uid &&
+                                        <TabsTrigger
+                                            value="Upvoted Posts"
+                                            className="transition-none flex gap-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-t-2 
+                        border-gray-600 rounded-none data-[state=active]:text-gray-700">
+                                            <svg aria-label="" className="x1lliihq x1n2onr6 x1roi4f4" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12"><title></title><polygon fill="none" points="20 21 12 13.44 4 21 4 3 20 3 20 21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></polygon></svg>
+                                            Upvoted Posts
+                                        </TabsTrigger>
+                                    }
+                                </TabsList>
+
+                                <TabsContent value="My Posts">
+                                    <div className="flex flex-col gap-6">
+                                        {forums.filter((forum) => forum.uid === uid).length === 0 ?
+                                            <div className="text-gray-500 mt-10 mx-auto"> Your forums will show here. </div>
+
+                                            : forums
+                                                .filter((forum) => forum.uid === uid)
+                                                .map((forum) => {
+                                                    const isUpvoted = upvoteStates[forum.forum_id] || false;
+                                                    const isDownvoted = downvoteStates[forum.forum_id] || false;
+
+                                                    return (
+                                                        <Card
+                                                            key={forum.forum_id}
+                                                            className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
+                                                            onClick={() => openForumDialog(forum)}
+                                                        >
+                                                            <CardHeader className="relative">
+                                                                {forum.uid === loggedInUser?.id && (
+                                                                    <div className="absolute top-1 right-3">
+                                                                        <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
+                                                                            <DropdownMenu>
+                                                                                <DropdownMenuTrigger asChild>
+                                                                                    <div className="flex justify-center items-center gap-3 cursor-pointer">
+                                                                                        <MdMoreHoriz className="w-6 h-6" color="gray" />
+                                                                                    </div>
+                                                                                </DropdownMenuTrigger>
+                                                                                <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
+                                                                                    <DropdownMenuGroup>
+                                                                                        <DropdownMenuItem
+                                                                                            onClick={(e) => {
+                                                                                                e.stopPropagation();
+                                                                                                openDeletePostDialog(forum.forum_id)
+                                                                                            }} className="cursor-pointer">
+                                                                                            {/* <UserIcon /> */}
+                                                                                            <div>Delete</div>
+                                                                                        </DropdownMenuItem>
+                                                                                    </DropdownMenuGroup>
+                                                                                </DropdownMenuContent>
+                                                                            </DropdownMenu>
+                                                                        </div>
                                                                     </div>
-                                                                </div>
-                                                            )}
-
-                                                            <div className="w-full flex items-center gap-3 cursor-pointer">
-                                                                <Avatar onClick={(e) => { e.stopPropagation(); goToProfile(forum.uid) }}>
-                                                                    <AvatarImage src="https://github.com/shadcn.png" />
-                                                                    <AvatarFallback>
-                                                                        {forum.profiles?.first_name?.[0] || "?"}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-
-                                                                <Label
-                                                                    htmlFor=""
-                                                                    className="text-md text-gray-700 cursor-pointer"
-                                                                    onClick={(e) => { e.stopPropagation(); goToProfile(forum.uid) }}
-                                                                >
-                                                                    {forum.profiles?.first_name}{" "}
-                                                                    {forum.profiles?.last_name}
-                                                                </Label>
-
-                                                                {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
-
-                                                                <Label className="text-gray-500 ml-auto">
-                                                                    {new Date(forum.date_created).toLocaleDateString()}
-                                                                </Label>
-                                                            </div>
-                                                        </CardHeader>
-                                                        <CardContent>
-                                                            <CardTitle className="text-md text-gray-700">
-                                                                {forum.title}
-                                                            </CardTitle>
-                                                            <CardDescription className="mt-2 whitespace-pre-wrap">
-                                                                {expandedStates[forum.forum_id]
-                                                                    ? forum.description
-                                                                    : forum.description.slice(0, 100) + "..."}
-                                                                {forum.description.length > 100 && (
-                                                                    <span
-                                                                        className="text-blue-500 cursor-pointer ml-2"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation()
-                                                                            toggleExpand(forum.forum_id)
-                                                                        }
-                                                                        }
-                                                                    >
-                                                                        {expandedStates[forum.forum_id]
-                                                                            ? "See less"
-                                                                            : "See more"}
-                                                                    </span>
                                                                 )}
-                                                            </CardDescription>
-                                                            {forum.links_imgs?.length > 0 && (
-                                                                <div className="bg-gray-200 flex items-center justify-center mt-4">
-                                                                    <img
-                                                                        src={forum.links_imgs[0]}
-                                                                        alt={forum.title}
-                                                                        className="w-full h-full object-cover"
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                        </CardContent>
-                                                        <CardFooter>
-                                                            <div className="flex gap-1">
-                                                                <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
-                                                                    <div
-                                                                        className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
-                                                                            }`}
-                                                                        onClick={() => toggleUpvote(forum.forum_id)}
+
+                                                                <div className="w-full flex items-center gap-3 cursor-pointer">
+                                                                    <Avatar onClick={(e) => e.stopPropagation()}>
+                                                                        <AvatarImage src="https://github.com/shadcn.png" />
+                                                                        <AvatarFallback>
+                                                                            {forum.profiles?.first_name?.[0] || "?"}
+                                                                        </AvatarFallback>
+                                                                    </Avatar>
+
+                                                                    <Label
+                                                                        htmlFor=""
+                                                                        className="text-md text-gray-700 cursor-pointer"
+                                                                        onClick={(e) => e.stopPropagation()}
                                                                     >
-                                                                        <svg
-                                                                            width="24"
-                                                                            height="24"
-                                                                            viewBox="0 0 24 24"
-                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                        {forum.profiles?.first_name}{" "}
+                                                                        {forum.profiles?.last_name}
+                                                                    </Label>
+
+                                                                    {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
+
+                                                                    <Label className="text-gray-500 ml-auto">
+                                                                        {new Date(forum.date_created).toLocaleDateString()}
+                                                                    </Label>
+                                                                </div>
+                                                            </CardHeader>
+                                                            <CardContent>
+                                                                <CardTitle className="text-md text-gray-700">
+                                                                    {forum.title}
+                                                                </CardTitle>
+                                                                <CardDescription className="mt-2 whitespace-pre-wrap">
+                                                                    {expandedStates[forum.forum_id]
+                                                                        ? forum.description
+                                                                        : forum.description.slice(0, 100) + "..."}
+                                                                    {forum.description.length > 100 && (
+                                                                        <span
+                                                                            className="text-blue-500 cursor-pointer ml-2"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation()
+                                                                                toggleExpand(forum.forum_id)
+                                                                            }
+                                                                            }
                                                                         >
-                                                                            <path
-                                                                                d="M12 4 3 15h6v5h6v-5h6z"
-                                                                                stroke="#666"
-                                                                                strokeWidth="1.5"
-                                                                                fill={isUpvoted ? "#92c78b" : "none"}
-                                                                                strokeLinejoin="round"
-                                                                            ></path>
-                                                                        </svg>
-                                                                        <div className="text-sm font-semibold text-gray-700">
-                                                                            Upvote{" "}
-                                                                            <span className="font-normal text-sm">
-                                                                                ⧇ {forum.upvotes}
+                                                                            {expandedStates[forum.forum_id]
+                                                                                ? "See less"
+                                                                                : "See more"}
+                                                                        </span>
+                                                                    )}
+                                                                </CardDescription>
+                                                                {forum.links_imgs?.length > 0 && (
+                                                                    <div className="bg-gray-200 flex items-center justify-center mt-4">
+                                                                        <img
+                                                                            src={forum.links_imgs[0]}
+                                                                            alt={forum.title}
+                                                                            className="w-full h-full object-cover"
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </CardContent>
+                                                            <CardFooter>
+                                                                <div className="flex gap-1">
+                                                                    <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                                                        <div
+                                                                            className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
+                                                                                }`}
+                                                                            onClick={() => toggleUpvote(forum.forum_id)}
+                                                                        >
+                                                                            <svg
+                                                                                width="24"
+                                                                                height="24"
+                                                                                viewBox="0 0 24 24"
+                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                            >
+                                                                                <path
+                                                                                    d="M12 4 3 15h6v5h6v-5h6z"
+                                                                                    stroke="#666"
+                                                                                    strokeWidth="1.5"
+                                                                                    fill={isUpvoted ? "#92c78b" : "none"}
+                                                                                    strokeLinejoin="round"
+                                                                                ></path>
+                                                                            </svg>
+                                                                            <div className="text-sm font-semibold text-gray-700">
+                                                                                Upvote{" "}
+                                                                                <span className="font-normal text-sm">
+                                                                                    ⧇ {forum.upvotes}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div
+                                                                            className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
+                                                                                }`}
+                                                                            onClick={() => toggleDownvote(forum.forum_id)}
+                                                                        >
+                                                                            <svg
+                                                                                width="24"
+                                                                                height="24"
+                                                                                viewBox="0 0 24 24"
+                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                            >
+                                                                                <path
+                                                                                    d="m12 20 9-11h-6V4H9v5H3z"
+                                                                                    stroke="#666"
+                                                                                    strokeWidth="1.5"
+                                                                                    fill={isDownvoted ? "#cc4767" : "none"}
+                                                                                    strokeLinejoin="round"
+                                                                                ></path>
+                                                                            </svg>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="box-border flex hover:bg-gray-100 rounded-full">
+                                                                        <div className="flex items-center gap-1 p-1 cursor-pointer select-none">
+                                                                            <svg
+                                                                                width="24"
+                                                                                height="24"
+                                                                                viewBox="0 0 24 24"
+                                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                            >
+                                                                                <path
+                                                                                    d="M12.071 18.86c4.103 0 7.429-3.102 7.429-6.93C19.5 8.103 16.174 5 12.071 5s-7.429 3.103-7.429 6.93c0 1.291.379 2.5 1.037 3.534.32.501-1.551 3.058-1.112 3.467.46.429 3.236-1.295 3.803-.99 1.09.585 2.354.92 3.701.92Z"
+                                                                                    className="icon_svg-stroke icon_svg-fill"
+                                                                                    stroke="#666"
+                                                                                    strokeWidth="1.5"
+                                                                                    fill="none"
+                                                                                ></path>
+                                                                            </svg>
+                                                                            <span className="text-sm font-normal text-gray-700">
+                                                                                {forum.count_comments}
                                                                             </span>
                                                                         </div>
                                                                     </div>
-                                                                    <div
-                                                                        className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
-                                                                            }`}
-                                                                        onClick={() => toggleDownvote(forum.forum_id)}
-                                                                    >
-                                                                        <svg
-                                                                            width="24"
-                                                                            height="24"
-                                                                            viewBox="0 0 24 24"
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                        >
-                                                                            <path
-                                                                                d="m12 20 9-11h-6V4H9v5H3z"
-                                                                                stroke="#666"
-                                                                                strokeWidth="1.5"
-                                                                                fill={isDownvoted ? "#cc4767" : "none"}
-                                                                                strokeLinejoin="round"
-                                                                            ></path>
-                                                                        </svg>
-                                                                    </div>
                                                                 </div>
-                                                                <div className="box-border flex hover:bg-gray-100 rounded-full">
-                                                                    <div className="flex items-center gap-1 p-1 cursor-pointer select-none">
-                                                                        <svg
-                                                                            width="24"
-                                                                            height="24"
-                                                                            viewBox="0 0 24 24"
-                                                                            xmlns="http://www.w3.org/2000/svg"
-                                                                        >
-                                                                            <path
-                                                                                d="M12.071 18.86c4.103 0 7.429-3.102 7.429-6.93C19.5 8.103 16.174 5 12.071 5s-7.429 3.103-7.429 6.93c0 1.291.379 2.5 1.037 3.534.32.501-1.551 3.058-1.112 3.467.46.429 3.236-1.295 3.803-.99 1.09.585 2.354.92 3.701.92Z"
-                                                                                className="icon_svg-stroke icon_svg-fill"
-                                                                                stroke="#666"
-                                                                                strokeWidth="1.5"
-                                                                                fill="none"
-                                                                            ></path>
-                                                                        </svg>
-                                                                        <span className="text-sm font-normal text-gray-700">
-                                                                            {forum.count_comments}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </CardFooter>
-                                                    </Card>
-                                                );
-                                            })}
-                                </div>
-                            </TabsContent>
-                        }
-
-                    </Tabs>
-                </div>
-            </div>
-
-            <AlertDialog open={forumDialog} onOpenChange={(isOpen) => {
-                setForumDialog(isOpen);
-
-                // Run custom logic only when the dialog closes
-                if (!isOpen) {
-                    closeForumDialog()
-                }
-            }}>
-                <AlertDialogContent className="w-[70%] h-[90%] max-w-none z-[9998] p-0 border-none">
-                    <AlertDialogCancel
-                        onClick={closeForumDialog}
-                        className="fixed w-11 h-11 top-[-30px] left-[-270px] rounded-full font-bold text-gray-700"
-                    >
-                        X
-                    </AlertDialogCancel>
-
-                    <div className="w-full h-full max-h-full overflow-auto flex rounded-md">
-                        <div className="w-[70%] h-full rounded-md">
-                            <img
-                                src={openedForumData?.links_imgs?.[0] || "https://via.placeholder.com/600?text=No+Image+Available"}
-                                alt={openedForumData?.title || "No title available"}
-                                className="w-full h-full object-cover rounded-md"
-                            />
-                        </div>
-
-                        <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
-                            <div className="flex gap-2 items-center">
-                                <Avatar
-                                    onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "")}}
-                                    className="cursor-pointer"
-                                >
-                                    <AvatarImage src="https://github.com/shadcn.png" />
-                                    <AvatarFallback>
-                                        CN
-                                    </AvatarFallback>
-                                </Avatar>
-                                <Label
-                                    htmlFor=""
-                                    className="text-md text-gray-700 cursor-pointer"
-                                    onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "")}}
-                                >
-                                    {openedForumData?.profiles?.first_name}{" "}
-                                    {openedForumData?.profiles?.last_name}
-                                </Label>
-                                <Label className="text-gray-500 ml-auto">
-                                    {openedForumData?.date_created
-                                        ? new Date(openedForumData.date_created).toLocaleDateString()
-                                        : "Unknown date"}
-                                </Label>
-                            </div>
-
-
-                            <div className="mt-4">
-                                <div className="text-md font-semibold text-gray-800 mb-4">
-                                    {openedForumData?.title}
-                                </div>
-                                <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
-                                    {openedForumData?.description}
-                                </div>
-
-                                <Separator className="mt-4" />
-
-                                <div className="mt-4">
-                                    <div className="flex w-fit border rounded-full">
-                                        <div
-                                            className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none 
-                                            ${upvoteStates[openedForumData?.forum_id || 1] ? "bg-green-100" : ""}`}
-                                            onClick={() => toggleUpvote(openedForumData?.forum_id || "1")}
-                                        >
-                                            <svg
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    d="M12 4 3 15h6v5h6v-5h6z"
-                                                    stroke="#666"
-                                                    strokeWidth="1.5"
-                                                    // fill={isUpvoted ? "#92c78b" : "none"}
-                                                    fill={upvoteStates[openedForumData?.forum_id || 1] ? "#92c78b" : "none"}
-                                                    strokeLinejoin="round"
-                                                ></path>
-                                            </svg>
-                                            <div className="text-sm font-semibold text-gray-700">
-                                                Upvote{" "}
-                                                <span className="font-normal text-sm">
-                                                    ⧇ {openedForumData?.upvotes}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div
-                                            className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none 
-                                            ${downvoteStates[openedForumData?.forum_id || 1] ? "bg-red-100" : ""}
-                                        `}
-                                            onClick={() => toggleDownvote(openedForumData?.forum_id || "1")}
-                                        >
-                                            <svg
-                                                width="24"
-                                                height="24"
-                                                viewBox="0 0 24 24"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                            >
-                                                <path
-                                                    d="m12 20 9-11h-6V4H9v5H3z"
-                                                    stroke="#666"
-                                                    strokeWidth="1.5"
-                                                    fill={downvoteStates[openedForumData?.forum_id || 1] ? "#cc4767" : "none"}
-                                                    strokeLinejoin="round"
-                                                ></path>
-                                            </svg>
-                                        </div>
+                                                            </CardFooter>
+                                                        </Card>
+                                                    );
+                                                })}
                                     </div>
-                                </div>
+                                </TabsContent>
 
-                                <Separator className="mt-4" />
+                                {loggedInUser?.id === uid &&
+                                    <TabsContent value="Upvoted Posts">
+                                        <div className="flex flex-col gap-6">
+                                            {forums.filter((forum) => upvoteStates[forum.forum_id]).length === 0 ?
+                                                <div className="text-gray-500 mt-10 mx-auto"> Your upvoted forums will show here. </div>
 
-                                <div className="w-full flex flex-col gap-4 mt-4 mb-3">
-                                    {openedForumComments?.map((comment: any, index: number) => (
-                                        <div key={comment.comment_id} className={`flex flex-col ${index == 0 && searchParams.get("comment_id") === comment.comment_id ? "border-gray-200 border shadow-sm p-3 box-border bg-gray-50" : ""}`}>
-                                            <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
-                                                {/* Avatar */}
-                                                <Avatar
-                                                    onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid)}}
-                                                    className="flex-shrink-0 cursor-pointer"
-                                                >
-                                                    <AvatarImage src="https://github.com/shadcn.png" />
-                                                    <AvatarFallback className="">
-                                                        {comment.first_name + " " + comment.last_name}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                : forums
+                                                    .filter((forum) => upvoteStates[forum.forum_id])
+                                                    .map((forum) => {
+                                                        const isUpvoted = upvoteStates[forum.forum_id] || false;
+                                                        const isDownvoted = downvoteStates[forum.forum_id] || false;
 
-                                                {/* Comment Content */}
-                                                <div className="flex flex-col bg-gray-100 relative rounded p-3 break-words max-w-full overflow-auto">
-                                                    {/* User Name */}
-                                                    <Label
-                                                        htmlFor=""
-                                                        className="text-md text-gray-700 cursor-pointer"
-                                                        onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid)}}
-                                                    >
-                                                        {comment.first_name + " " + comment.last_name}
-                                                    </Label>
+                                                        return (
+                                                            <Card
+                                                                key={forum.forum_id}
+                                                                className="w-[500px] max-w-[500px] hover:shadow-lg transition-shadow cursor-pointer"
+                                                                onClick={() => openForumDialog(forum)}
+                                                            >
+                                                                <CardHeader className="relative">
+                                                                    {forum.uid === loggedInUser?.id && (
+                                                                        <div className="absolute top-1 right-3">
+                                                                            <div className="w-8 h-8 hover:bg-gray-100 rounded-full flex justify-center items-center">
+                                                                                <DropdownMenu>
+                                                                                    <DropdownMenuTrigger asChild>
+                                                                                        <div className="flex justify-center items-center gap-3 cursor-pointer">
+                                                                                            <MdMoreHoriz className="w-6 h-6" color="gray" />
+                                                                                        </div>
+                                                                                    </DropdownMenuTrigger>
+                                                                                    <DropdownMenuContent className="w-fit" onClick={(e) => e.stopPropagation()}>
+                                                                                        <DropdownMenuGroup>
+                                                                                            <DropdownMenuItem
+                                                                                                onClick={(e) => {
+                                                                                                    e.stopPropagation();
+                                                                                                    openDeletePostDialog(forum.forum_id)
+                                                                                                }} className="cursor-pointer">
+                                                                                                {/* <UserIcon /> */}
+                                                                                                <div>Delete</div>
+                                                                                            </DropdownMenuItem>
+                                                                                        </DropdownMenuGroup>
+                                                                                    </DropdownMenuContent>
+                                                                                </DropdownMenu>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
 
-                                                    {/* Comment Text */}
-                                                    <h2 className="text-gray-700 text-[.9rem]">
-                                                        {comment.content}
-                                                    </h2>
-                                                </div>
-                                            </div>
+                                                                    <div className="w-full flex items-center gap-3 cursor-pointer">
+                                                                        <Avatar onClick={(e) => { e.stopPropagation(); goToProfile(forum.uid) }}>
+                                                                            <AvatarImage src="https://github.com/shadcn.png" />
+                                                                            <AvatarFallback>
+                                                                                {forum.profiles?.first_name?.[0] || "?"}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
 
+                                                                        <Label
+                                                                            htmlFor=""
+                                                                            className="text-md text-gray-700 cursor-pointer"
+                                                                            onClick={(e) => { e.stopPropagation(); goToProfile(forum.uid) }}
+                                                                        >
+                                                                            {forum.profiles?.first_name}{" "}
+                                                                            {forum.profiles?.last_name}
+                                                                        </Label>
 
-                                            {/* Date and Reply */}
-                                            <div className="ml-auto flex items-center gap-3">
-                                                <Label className="text-gray-500">
-                                                    {new Date(comment.date_created).toLocaleDateString()}
-                                                </Label>
+                                                                        {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
 
-                                                {/* <Button className="text-gray-700 m-0 p-0" variant="link">
-                                                    Reply
-                                                </Button> */}
-
-                                                {/* Conditionally show Delete button only for the logged-in user's comments */}
-                                                {comment.uid === loggedInUser?.id && (
-                                                    <Button
-                                                        className="text-red-600 m-0 p-0"
-                                                        variant="link"
-                                                        onClick={() => openDeleteCommentDialog(comment.comment_id)}
-                                                    >
-                                                        Delete
-                                                    </Button>
-                                                )}
-                                            </div>
+                                                                        <Label className="text-gray-500 ml-auto">
+                                                                            {new Date(forum.date_created).toLocaleDateString()}
+                                                                        </Label>
+                                                                    </div>
+                                                                </CardHeader>
+                                                                <CardContent>
+                                                                    <CardTitle className="text-md text-gray-700">
+                                                                        {forum.title}
+                                                                    </CardTitle>
+                                                                    <CardDescription className="mt-2 whitespace-pre-wrap">
+                                                                        {expandedStates[forum.forum_id]
+                                                                            ? forum.description
+                                                                            : forum.description.slice(0, 100) + "..."}
+                                                                        {forum.description.length > 100 && (
+                                                                            <span
+                                                                                className="text-blue-500 cursor-pointer ml-2"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation()
+                                                                                    toggleExpand(forum.forum_id)
+                                                                                }
+                                                                                }
+                                                                            >
+                                                                                {expandedStates[forum.forum_id]
+                                                                                    ? "See less"
+                                                                                    : "See more"}
+                                                                            </span>
+                                                                        )}
+                                                                    </CardDescription>
+                                                                    {forum.links_imgs?.length > 0 && (
+                                                                        <div className="bg-gray-200 flex items-center justify-center mt-4">
+                                                                            <img
+                                                                                src={forum.links_imgs[0]}
+                                                                                alt={forum.title}
+                                                                                className="w-full h-full object-cover"
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </CardContent>
+                                                                <CardFooter>
+                                                                    <div className="flex gap-1">
+                                                                        <div className="box-border flex bg-gray-50 border border-gray-200 rounded-full" onClick={(e) => e.stopPropagation()}>
+                                                                            <div
+                                                                                className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
+                                                                                    }`}
+                                                                                onClick={() => toggleUpvote(forum.forum_id)}
+                                                                            >
+                                                                                <svg
+                                                                                    width="24"
+                                                                                    height="24"
+                                                                                    viewBox="0 0 24 24"
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                >
+                                                                                    <path
+                                                                                        d="M12 4 3 15h6v5h6v-5h6z"
+                                                                                        stroke="#666"
+                                                                                        strokeWidth="1.5"
+                                                                                        fill={isUpvoted ? "#92c78b" : "none"}
+                                                                                        strokeLinejoin="round"
+                                                                                    ></path>
+                                                                                </svg>
+                                                                                <div className="text-sm font-semibold text-gray-700">
+                                                                                    Upvote{" "}
+                                                                                    <span className="font-normal text-sm">
+                                                                                        ⧇ {forum.upvotes}
+                                                                                    </span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div
+                                                                                className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
+                                                                                    }`}
+                                                                                onClick={() => toggleDownvote(forum.forum_id)}
+                                                                            >
+                                                                                <svg
+                                                                                    width="24"
+                                                                                    height="24"
+                                                                                    viewBox="0 0 24 24"
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                >
+                                                                                    <path
+                                                                                        d="m12 20 9-11h-6V4H9v5H3z"
+                                                                                        stroke="#666"
+                                                                                        strokeWidth="1.5"
+                                                                                        fill={isDownvoted ? "#cc4767" : "none"}
+                                                                                        strokeLinejoin="round"
+                                                                                    ></path>
+                                                                                </svg>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="box-border flex hover:bg-gray-100 rounded-full">
+                                                                            <div className="flex items-center gap-1 p-1 cursor-pointer select-none">
+                                                                                <svg
+                                                                                    width="24"
+                                                                                    height="24"
+                                                                                    viewBox="0 0 24 24"
+                                                                                    xmlns="http://www.w3.org/2000/svg"
+                                                                                >
+                                                                                    <path
+                                                                                        d="M12.071 18.86c4.103 0 7.429-3.102 7.429-6.93C19.5 8.103 16.174 5 12.071 5s-7.429 3.103-7.429 6.93c0 1.291.379 2.5 1.037 3.534.32.501-1.551 3.058-1.112 3.467.46.429 3.236-1.295 3.803-.99 1.09.585 2.354.92 3.701.92Z"
+                                                                                        className="icon_svg-stroke icon_svg-fill"
+                                                                                        stroke="#666"
+                                                                                        strokeWidth="1.5"
+                                                                                        fill="none"
+                                                                                    ></path>
+                                                                                </svg>
+                                                                                <span className="text-sm font-normal text-gray-700">
+                                                                                    {forum.count_comments}
+                                                                                </span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </CardFooter>
+                                                            </Card>
+                                                        );
+                                                    })}
                                         </div>
-                                    ))}
-                                </div>
+                                    </TabsContent>
+                                }
 
-
-                            </div>
-
-                            <div className="w-full h-24 sticky bottom-0 shadow-sm">
-
-                                <Textarea className="bg-gray-50 h-full resize-none" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
-
-                                <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
-                                    <FaPaperPlane className="absolute w-5 h-5" color="#3285a8" />
-                                </div>
-                            </div>
-
+                            </Tabs>
                         </div>
                     </div>
-                </AlertDialogContent>
-            </AlertDialog>
 
-            <AlertDialog open={deleteCommentDialog}>
-                <AlertDialogOverlay className="bg-transparent" /> {/* Customize the overlay */}
-                <AlertDialogContent className="z-[9999]">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle> {dialogContent.title} </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            {dialogContent.content}
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={dialogContent.cancel}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={dialogContent.action}>{dialogContent.buttonText}</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+                    <AlertDialog open={forumDialog} onOpenChange={(isOpen) => {
+                        setForumDialog(isOpen);
+
+                        // Run custom logic only when the dialog closes
+                        if (!isOpen) {
+                            closeForumDialog()
+                        }
+                    }}>
+                        <AlertDialogContent className="w-[70%] min-w-[1400px] h-[90%] z-[9998] p-0 border-none pointer-events-none">
+                            <AlertDialogCancel
+                                onClick={closeForumDialog}
+                                className="border border-gray-500 fixed top-4 left-4 z-[20] bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-gray-700 w-[50px] h-[50px] flex justify-center items-center"
+                            >
+                                X
+                            </AlertDialogCancel>
+
+                            <div className="w-full h-full max-h-full overflow-auto flex rounded-md">
+                                <div className="w-[70%] h-full rounded-md bg-gray-200">
+                                    <img
+                                        src={openedForumData?.links_imgs?.[0] || "https://via.placeholder.com/600?text=No+Image+Available"}
+                                        alt={openedForumData?.title || "No title available"}
+                                        className={`w-full h-full ${openedForumData?.links_imgs?.[0] ? "object-contain" : ""} rounded-md`}
+                                    />
+                                </div>
+
+                                <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
+                                    <div className="flex gap-2 items-center">
+                                        <Avatar
+                                            onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "") }}
+                                            className="cursor-pointer"
+                                        >
+                                            <AvatarImage src="https://github.com/shadcn.png" />
+                                            <AvatarFallback>
+                                                CN
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <Label
+                                            htmlFor=""
+                                            className="text-md text-gray-700 cursor-pointer"
+                                            onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "") }}
+                                        >
+                                            {openedForumData?.profiles?.first_name}{" "}
+                                            {openedForumData?.profiles?.last_name}
+                                        </Label>
+                                        <Label className="text-gray-500 ml-auto">
+                                            {openedForumData?.date_created
+                                                ? new Date(openedForumData.date_created).toLocaleDateString()
+                                                : "Unknown date"}
+                                        </Label>
+                                    </div>
+
+
+                                    <div className="mt-4">
+                                        <div className="text-md font-semibold text-gray-800 mb-4">
+                                            {openedForumData?.title}
+                                        </div>
+                                        <div className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                            {openedForumData?.description}
+                                        </div>
+
+                                        <Separator className="mt-4" />
+
+                                        <div className="mt-4">
+                                            <div className="flex w-fit border rounded-full">
+                                                <div
+                                                    className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none 
+                                    ${upvoteStates[openedForumData?.forum_id || 1] ? "bg-green-100" : ""}`}
+                                                    onClick={() => toggleUpvote(openedForumData?.forum_id || "1")}
+                                                >
+                                                    <svg
+                                                        width="24"
+                                                        height="24"
+                                                        viewBox="0 0 24 24"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                    >
+                                                        <path
+                                                            d="M12 4 3 15h6v5h6v-5h6z"
+                                                            stroke="#666"
+                                                            strokeWidth="1.5"
+                                                            // fill={isUpvoted ? "#92c78b" : "none"}
+                                                            fill={upvoteStates[openedForumData?.forum_id || 1] ? "#92c78b" : "none"}
+                                                            strokeLinejoin="round"
+                                                        ></path>
+                                                    </svg>
+                                                    <div className="text-sm font-semibold text-gray-700">
+                                                        Upvote{" "}
+                                                        <span className="font-normal text-sm">
+                                                            ⧇ {openedForumData?.upvotes}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div
+                                                    className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none 
+                                    ${downvoteStates[openedForumData?.forum_id || 1] ? "bg-red-100" : ""}
+                                `}
+                                                    onClick={() => toggleDownvote(openedForumData?.forum_id || "1")}
+                                                >
+                                                    <svg
+                                                        width="24"
+                                                        height="24"
+                                                        viewBox="0 0 24 24"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                    >
+                                                        <path
+                                                            d="m12 20 9-11h-6V4H9v5H3z"
+                                                            stroke="#666"
+                                                            strokeWidth="1.5"
+                                                            fill={downvoteStates[openedForumData?.forum_id || 1] ? "#cc4767" : "none"}
+                                                            strokeLinejoin="round"
+                                                        ></path>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <Separator className="mt-4" />
+
+                                        <div className="w-full flex flex-col gap-4 mt-4 mb-3">
+                                            {openedForumComments?.map((comment: any, index: number) => (
+                                                <div key={comment.comment_id} className={`flex flex-col ${index == 0 && searchParams.get("comment_id") === comment.comment_id ? "border-gray-200 border shadow-sm p-3 box-border bg-gray-50" : ""}`}>
+                                                    <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
+                                                        {/* Avatar */}
+                                                        <Avatar
+                                                            onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid) }}
+                                                            className="flex-shrink-0 cursor-pointer"
+                                                        >
+                                                            <AvatarImage src="https://github.com/shadcn.png" />
+                                                            <AvatarFallback className="">
+                                                                {comment.first_name + " " + comment.last_name}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+
+                                                        {/* Comment Content */}
+                                                        <div className="flex flex-col bg-gray-100 relative rounded p-3 break-words max-w-full overflow-auto">
+                                                            {/* User Name */}
+                                                            <Label
+                                                                htmlFor=""
+                                                                className="text-md text-gray-700 cursor-pointer"
+                                                                onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid) }}
+                                                            >
+                                                                {comment.first_name + " " + comment.last_name}
+                                                            </Label>
+
+                                                            {/* Comment Text */}
+                                                            <h2 className="text-gray-700 text-[.9rem]">
+                                                                {comment.content}
+                                                            </h2>
+                                                        </div>
+                                                    </div>
+
+
+                                                    {/* Date and Reply */}
+                                                    <div className="ml-auto flex items-center gap-3">
+                                                        <Label className="text-gray-500">
+                                                            {new Date(comment.date_created).toLocaleDateString()}
+                                                        </Label>
+
+                                                        {/* <Button className="text-gray-700 m-0 p-0" variant="link">
+                                            Reply
+                                        </Button> */}
+
+                                                        {/* Conditionally show Delete button only for the logged-in user's comments */}
+                                                        {comment.uid === loggedInUser?.id && (
+                                                            <Button
+                                                                className="text-red-600 m-0 p-0"
+                                                                variant="link"
+                                                                onClick={() => openDeleteCommentDialog(comment.comment_id)}
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+
+                                    </div>
+
+                                    <div className="w-full h-24 sticky bottom-0 shadow-sm">
+
+                                        <Textarea className="bg-gray-50 h-full resize-none" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+
+                                        <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
+                                            <FaPaperPlane className="absolute w-5 h-5" color="#3285a8" />
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
+                    <AlertDialog open={deleteCommentDialog}>
+                        <AlertDialogOverlay className="bg-transparent" /> {/* Customize the overlay */}
+                        <AlertDialogContent className="z-[9999]">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle> {dialogContent.title} </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    {dialogContent.content}
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel onClick={dialogContent.cancel}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={dialogContent.action}>{dialogContent.buttonText}</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+                :
+                <div className="flex justify-center items-center text-gray-500 text-xl"> This user doesn't exist </div>
+            }
         </div>
     );
 }

@@ -25,7 +25,7 @@ type MyComponentProps = {
 
 function ForumsSidebar({ openCreateSpace, closeCreateSpace }: MyComponentProps) {
     return (
-        <div className="w-[250px] h-full border-r border-gray-300 p-6 sticky top-16">
+        <div className="w-[250px] h-full border-r border-gray-300 p-6 sticky top-0">
             <div className="text-xl font-bold text-gray-800">
                 Forums
             </div>

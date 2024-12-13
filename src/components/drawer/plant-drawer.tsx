@@ -34,7 +34,7 @@ import StepLabel from '@mui/material/StepLabel';
 import StepContent from '@mui/material/StepContent';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-  
+
 
 // objects
 interface Plant {
@@ -54,51 +54,51 @@ type MyComponentProps = {
 };
 
 const steps = [
-  {
-    label: 'Select campaign settings',
-    description: `For each ad campaign that you create, you can control how much
+    {
+        label: 'Select campaign settings',
+        description: `For each ad campaign that you create, you can control how much
               you're willing to spend on clicks and conversions, which networks
               and geographical locations you want your ads to show on, and more.`,
-  },
-  {
-    label: 'Create an ad group',
-    description:
-      'An ad group contains one or more ads which target a shared set of keywords.',
-  },
-  {
-    label: 'Create an ad',
-    description: `Try out different ad text to see what brings in the most customers,
+    },
+    {
+        label: 'Create an ad group',
+        description:
+            'An ad group contains one or more ads which target a shared set of keywords.',
+    },
+    {
+        label: 'Create an ad',
+        description: `Try out different ad text to see what brings in the most customers,
               and learn how to enhance your ads using features like ad extensions.
               If you run into any problems with your ads, find out how to tell if
               they're running and how to resolve approval issues.`,
-  },
+    },
 ];
 
 function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps) {
-  const [activeStep, setActiveStep] = useState(0);
+    const [activeStep, setActiveStep] = useState(0);
 
-  const handleNext = ():void => {
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
-  };
+    const handleNext = (): void => {
+        setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    };
 
-  const handleBack = ():void => {
-    setActiveStep((prevActiveStep) => prevActiveStep - 1);
-  };
+    const handleBack = (): void => {
+        setActiveStep((prevActiveStep) => prevActiveStep - 1);
+    };
 
-  const handleReset = ():void => {
-    setActiveStep(0);
-  };
+    const handleReset = (): void => {
+        setActiveStep(0);
+    };
 
-  // Using steps from the plantData object
-  const stepsArray = Object.entries(plantData?.steps || {}).map(([key, value]) => ({
-    label: key,
-    description: value,
-  }));
+    // Using steps from the plantData object
+    const stepsArray = Object.entries(plantData?.steps || {}).map(([key, value]) => ({
+        label: key,
+        description: value,
+    }));
 
-  useEffect(() => {
-    handleReset();
-  }, [isDrawerOpen]);
-     
+    useEffect(() => {
+        handleReset();
+    }, [isDrawerOpen]);
+
     return (
         <div className="">
             <Sheet open={isDrawerOpen}>
@@ -110,51 +110,22 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                             {plantData?.plant_name}
                         </div>
                     </div>
-                    
+
                     {/* main */}
-                    <div className="w-[75%] max-w-[75%] m-auto mt-[50px]">
+                    <div className="w-[75%] max-w-[75%] m-auto mt-[30px] bg-gray-50 p-10 rounded shadow-sm border ">
                         <div className="w-full flex justify-between items-center gap-28">
                             <div className="w-[60%] text-md text-center leading-[2.5rem] text-gray-600">
                                 {plantData?.description_long}
                             </div>
-                            <div className="w-[40%] h-[500px] bg-gray-200 rounded">
+                            <div className=" h-[500px] min-w-[500px] max-w-[500px] bg-gray-200 rounded">
                                 <img src={plantData?.images_links[0]} alt={plantData?.plant_name} className="w-full h-full object-cover rounded" />
                             </div>
                         </div>
                     </div>
 
-                     {/* this div
-                    <div className="w-[75%] max-w-[75%] m-auto mt-[100px]">
-                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Other images </div> 
-                        <Carousel
-                            opts={{
-                                align: "start",
-                            }}
-                            className="w-full"
-                        >
-                            <CarouselContent className="w-[80%] h-full">
-                                {plantData?.images_links
-                                    ?.filter((link) => !link.endsWith('0.jpg')) // Filter out 0.jpg
-                                    .map((imageLink, index) => (
-                                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/4">
-                                            <div className="p-1">
-                                                <img
-                                                    src={imageLink}
-                                                    alt={`Plant image ${index + 1}`} // Provide alt text for accessibility
-                                                    className="w-full aspect-square object-cover rounded-lg"
-                                                />
-                                            </div>
-                                        </CarouselItem>
-                                    ))}
-                            </CarouselContent>
-                            <CarouselPrevious />
-                            <CarouselNext />
-                        </Carousel>
-                    </div> */}
-                    
-                    
-                    <div className="w-[75%] max-w-[75%] m-auto mt-[100px]">
-                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Other images </div> 
+                    {/* carousel */}
+                    <div className="w-[75%] max-w-[75%] m-auto mt-[30px] bg-gray-50 p-14 rounded shadow-sm border ">
+                        <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Other images </div>
                         <Carousel
                             opts={{
                                 align: "start",
@@ -182,8 +153,9 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                             <CarouselNext />
                         </Carousel>
                     </div>
-                    
-                    <div className="w-[75%] m-auto mt-[75px]">
+
+                    {/* steps */}
+                    <div className="w-[75%] m-auto mt-[30px] bg-gray-50 p-10 rounded shadow-sm border">
                         <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Steps to follow </div>
                         <Box sx={{ maxWidth: 1200 }}>
                             <Stepper
@@ -208,16 +180,16 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                                                 color: 'rgb(75 85 99)',
                                             },
                                             '& .MuiStepLabel-label.Mui-completed.MuiStepLabel-alternativeLabel':
-                                                {
-                                                    color: 'grey.500',
-                                                },
+                                            {
+                                                color: 'grey.500',
+                                            },
                                             '& .MuiStepLabel-root .Mui-active': {
                                                 color: 'rgb(75 85 99)',
                                             },
                                             '& .MuiStepLabel-label.Mui-active.MuiStepLabel-alternativeLabel':
-                                                {
-                                                    color: 'white',
-                                                },
+                                            {
+                                                color: 'white',
+                                            },
                                             '& .MuiStepLabel-root .Mui-active .MuiStepIcon-text': {
                                                 fill: 'white',
                                             },
@@ -267,9 +239,9 @@ function PlantDrawer({ isDrawerOpen, plantData, closeDrawer }: MyComponentProps)
                             )}
                         </Box>
                     </div>
-     
+
                     {/* Frequently Asked Questions */}
-                    <div className="w-[75%] m-auto mt-[75px]">
+                    <div className="w-[75%] m-auto mt-[30px] bg-gray-50 p-10 rounded shadow-sm border">
                         <div className="text-2xl text-gray-600 font-semibold px-0 mb-[25px]"> Frequently Asked Questions </div>
                         <Accordion type="single" collapsible className="text-gray-700">
                             {plantData?.faq && Object.entries(plantData.faq).map(([question, answer], index) => (

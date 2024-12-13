@@ -776,10 +776,10 @@ function Forum() {
     }
 
     return (
-        <div className="flex ml-auto w-[75%] h-full">
+        <div className="flex m-auto h-full relative overflow-auto justify-center">
             <ForumsSidebar openCreateSpace={openCreateSpace} closeCreateSpace={closeCreateSpace} />
 
-            <div className="flex-1 p-6 flex flex-col gap-6 overflow-y-auto">
+            <div className=" p-6 flex flex-col gap-6 h-fit">
                 {forums.length == 0 ?
                     <div className="text-gray-500 m-auto"> No forums available at the moment. </div>
 
@@ -821,7 +821,7 @@ function Forum() {
                                     )}
 
                                     <div className="w-full flex items-center gap-3 cursor-pointer">
-                                        <Avatar id="avatar" onClick={(e) => {e.stopPropagation(); navigate(`/profile/${forum.uid}`)}}>
+                                        <Avatar id="avatar" onClick={(e) => { e.stopPropagation(); navigate(`/profile/${forum.uid}`) }}>
                                             <AvatarImage src="https://github.com/shadcn.png" />
                                             <AvatarFallback>
                                                 {forum.profiles?.first_name?.[0] || "?"}
@@ -831,7 +831,7 @@ function Forum() {
                                         <Label
                                             htmlFor="avatar"
                                             className="text-md text-gray-700 cursor-pointer"
-                                            onClick={(e) => {e.stopPropagation(); navigate(`/profile/${forum.uid}`)}}
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/profile/${forum.uid}`) }}
                                         >
                                             {forum.profiles?.first_name}{" "}
                                             {forum.profiles?.last_name}
@@ -975,34 +975,37 @@ function Forum() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <AlertDialog open={forumDialog} onOpenChange={(isOpen) => {
-                setForumDialog(isOpen);
+            <AlertDialog
+                open={forumDialog}
+                onOpenChange={(isOpen) => {
+                    setForumDialog(isOpen);
 
-                // Run custom logic only when the dialog closes
-                if (!isOpen) {
-                    closeForumDialog()
-                }
-            }}>
-                <AlertDialogContent className="w-[70%] h-[90%] max-w-none z-[9998] p-0 border-none">
+                    // Run custom logic only when the dialog closes
+                    if (!isOpen) {
+                        closeForumDialog()
+                    }
+                }}
+            >
+                <AlertDialogContent className="w-[70%] min-w-[1400px] h-[90%] z-[9998] p-0 border-none pointer-events-none">
                     <AlertDialogCancel
                         onClick={closeForumDialog}
-                        className="fixed w-11 h-11 top-[-30px] left-[-270px] rounded-full font-bold text-gray-700"
+                        className="border border-gray-500 fixed top-4 left-4 z-[20] bg-gray-100 hover:bg-gray-200 rounded-full font-bold text-gray-700 w-[50px] h-[50px] flex justify-center items-center"
                     >
                         X
                     </AlertDialogCancel>
 
                     <div className="w-full h-full max-h-full overflow-auto flex rounded-md">
-                        <div className="w-[70%] h-full rounded-md">
+                        <div className="w-[70%] h-full rounded-md bg-gray-200">
                             <img
                                 src={openedForumData?.links_imgs?.[0] || "https://via.placeholder.com/600?text=No+Image+Available"}
                                 alt={openedForumData?.title || "No title available"}
-                                className="w-full h-full object-cover rounded-md"
+                                className={`w-full h-full ${openedForumData?.links_imgs?.[0] ? "object-contain" : ""} rounded-md`}
                             />
                         </div>
 
                         <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
                             <div className="flex gap-2 items-center">
-                                <Avatar onClick={(e) => {e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`)}} className="cursor-pointer">
+                                <Avatar onClick={(e) => { e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`) }} className="cursor-pointer">
                                     <AvatarImage src="https://github.com/shadcn.png" />
                                     <AvatarFallback>
                                         CN
@@ -1011,7 +1014,7 @@ function Forum() {
                                 <Label
                                     htmlFor=""
                                     className="text-md text-gray-700 cursor-pointer"
-                                    onClick={(e) => {e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`)}}
+                                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`) }}
                                 >
                                     {openedForumData?.profiles?.first_name}{" "}
                                     {openedForumData?.profiles?.last_name}
@@ -1095,7 +1098,7 @@ function Forum() {
                                             <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
                                                 {/* Avatar */}
                                                 <Avatar
-                                                    onClick={(e) => {e.stopPropagation(); navigate(`/profile/${comment.uid}`)}}
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/profile/${comment.uid}`) }}
                                                     className="flex-shrink-0 cursor-pointer"
                                                 >
                                                     <AvatarImage src="https://github.com/shadcn.png" />
@@ -1110,7 +1113,7 @@ function Forum() {
                                                     <Label
                                                         htmlFor=""
                                                         className="text-md text-gray-700 cursor-pointer"
-                                                        onClick={(e) => {e.stopPropagation(); navigate(`/profile/${comment.uid}`)}}
+                                                        onClick={(e) => { e.stopPropagation(); navigate(`/profile/${comment.uid}`) }}
                                                     >
                                                         {comment.first_name + " " + comment.last_name}
                                                     </Label>
@@ -1152,7 +1155,6 @@ function Forum() {
                             </div>
 
                             <div className="w-full h-24 sticky bottom-0 shadow-sm">
-
                                 <Textarea className="bg-gray-50 h-full resize-none" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
 
                                 <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>

@@ -76,7 +76,7 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
             if (matchingPlant) {
                 setPlantData(matchingPlant);
                 setIsDrawerOpen(true);
-            }else{
+            } else {
                 navigate("/guides");
             }
         }
@@ -89,12 +89,12 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
         )
         .sort((a, b) => {
             if (sortBy === "name") {
-                return isAscending 
-                    ? a.plant_name.localeCompare(b.plant_name) 
+                return isAscending
+                    ? a.plant_name.localeCompare(b.plant_name)
                     : b.plant_name.localeCompare(a.plant_name);
             } else if (sortBy === "category") {
-                return isAscending 
-                    ? a.plant_category_id - b.plant_category_id 
+                return isAscending
+                    ? a.plant_category_id - b.plant_category_id
                     : b.plant_category_id - a.plant_category_id;
             }
             return 0;
@@ -127,11 +127,11 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
             {sortedCategoryIds.map((categoryId) => (
                 <div key={categoryId}>
                     <h2 className="text-md mb-6 text-gray-600">Category {categoryId}</h2>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid gap-4 grid-cols-[repeat(auto-fit,_350px)] justify-evenly">
                         {groupedPlants[categoryId].map((plant) => (
                             <Card
                                 key={plant.plant_id}
-                                className="mb-4 w-[350px] hover:shadow-lg transition-shadow cursor-pointer"
+                                className="mb-4 hover:shadow-lg transition-shadow cursor-pointer"
                                 onClick={() => openDrawer(plant)}
                             >
                                 <CardHeader>
@@ -150,6 +150,9 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
                             </Card>
                         ))}
                     </div>
+
+
+
                     <Separator className="my-8" />
                 </div>
             ))}

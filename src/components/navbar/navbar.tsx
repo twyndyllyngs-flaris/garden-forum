@@ -210,7 +210,7 @@ function Navbar() {
       <div className="container mx-auto flex justify-between items-center">
         {/* Logo or Branding */}
         <div className="text-2xl font-bold">
-          <Link to="/">GardenForum</Link>
+          <Link to="/guides">GardenForum</Link>
         </div>
 
         {/* Navbar links */}
@@ -241,7 +241,7 @@ function Navbar() {
             <DropdownMenuContent className="w-fit max-w-[300px] max-h-[600px] overflow-auto relative pt-0">
 
               <DropdownMenuLabel className="sticky top-0 bg-white z-10 border-b-[1px] border-gray-200 mb-1" onClick={test}>
-                {notifications.length === 0 ? "You have no notifications." : "Notifications"}
+                {notifications.length === 0 ? "Your notifaction will show here" : "Notifications"}
               </DropdownMenuLabel>
 
               <DropdownMenuGroup className="flex flex-col gap-2">
