@@ -121,12 +121,16 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
             return isAscending ? a - b : b - a; // For category sorting
         });
 
+    const test = () => {
+        console.log(groupedPlants)
+    }
+
     return (
         <div className="flex-1 h-fit p-10 box-border">
             <PlantDrawer isDrawerOpen={isDrawerOpen} plantData={plantData} closeDrawer={closeDrawer} />
             {sortedCategoryIds.map((categoryId) => (
                 <div key={categoryId}>
-                    <h2 className="text-md mb-6 text-gray-600">Category {categoryId}</h2>
+                    <h2 className="text-md mb-6 text-gray-600" onClick={test}>Category {categoryId}</h2>
                     <div className="grid gap-4 grid-cols-[repeat(auto-fit,_350px)] justify-evenly">
                         {groupedPlants[categoryId].map((plant) => (
                             <Card
@@ -134,12 +138,12 @@ function GuidesMain({ searchTerm, sortBy, isAscending }: GuidesMainProps) {
                                 className="mb-4 hover:shadow-lg transition-shadow cursor-pointer"
                                 onClick={() => openDrawer(plant)}
                             >
-                                <CardHeader>
+                                <CardHeader className="h-[110px]">
                                     <CardTitle className="text-xl text-gray-700">{plant.plant_name}</CardTitle>
                                     <CardDescription>{plant.description_short}</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
+                                    <div className="w-full h-48 max-h-48 bg-gray-200 flex items-center justify-center">
                                         <img
                                             src={plant.images_links[0]}
                                             alt={plant.plant_name}
