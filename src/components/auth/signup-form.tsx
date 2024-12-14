@@ -45,18 +45,30 @@ export function SignupForm() {
     event.preventDefault();
     setLoading(true); // Set loading to true when the signup process starts
     setError(""); // Clear any previous errors
-  
+
+    // Helper function to convert a string to Pascal Case
+    const toPascalCase = (str: string) => {
+      return str
+        .toLowerCase()
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+    };
+
+    // Process inputs
+    setFirstName(toPascalCase(firstName));
+    setLastName(toPascalCase(lastName));
+    setEmail(email.trim().toLowerCase());
+
     try {
       // Check if the email is confirmed
       const { data: isConfirmed, error: emailCheckError } = await supabase
         .rpc('is_email_confirmed', { email });
-  
+
       if (emailCheckError) {
         console.error('Error checking email status:', emailCheckError);
         setError('An error occurred while checking the email status.');
         return;
       }
-  
+
       // Check the email status
       if (isConfirmed === false) {
         setError('Please confirm your email before signing up.');
@@ -65,7 +77,7 @@ export function SignupForm() {
         setError('Email is already registered. Please use a different email.');
         return; // Prevent signup if the email is already confirmed
       }
-  
+
       // Proceed with the signup
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -79,15 +91,15 @@ export function SignupForm() {
           },
         },
       });
-  
+
       // Check if sign up was successful
       if (signUpError) {
         setError(signUpError.message);
         return; // Return early if there was an error
       }
-  
+
       console.log(data);
-  
+
       // Notify user to check their email for confirmation
       setDialog(true);
     } catch (error) {
@@ -97,8 +109,8 @@ export function SignupForm() {
       setLoading(false); // Ensure loading is set to false in all cases
     }
   };
-  
-  
+
+
   const handleLoginRedirect = () => {
     navigate("/");
   };
@@ -164,7 +176,7 @@ export function SignupForm() {
             </div>
             <Button
               type="submit"
-              className={`w-full ${loading ? "bg-gray-400" : "text-primary-foreground"}`} 
+              className={`w-full ${loading ? "bg-gray-400" : "text-primary-foreground"}`}
               disabled={loading} // Disable the button while loading
             >
               {loading ? "Loading..." : "Create an account"}
@@ -179,7 +191,7 @@ export function SignupForm() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Stay</AlertDialogCancel>
+                  <AlertDialogCancel onClick={() => setDialog(false)}>Stay</AlertDialogCancel>
                   <AlertDialogAction onClick={handleLoginRedirect}>Go to Login</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

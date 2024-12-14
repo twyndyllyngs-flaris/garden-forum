@@ -91,6 +91,7 @@ function Profile() {
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
     const [upvoteStates, setUpvoteStates] = useState<Record<string, boolean>>({});
     const [downvoteStates, setDownvoteStates] = useState<Record<string, boolean>>({});
+    const [voteLoading, setVoteLoading] = useState(false);
 
     const [forumDialog, setForumDialog] = useState(false)
     const [openedForumData, setOpenedForumData] = useState<Forum | null>(null)
@@ -221,8 +222,6 @@ function Profile() {
         getUserProfile();
     }, [uid]);
 
-
-
     const toggleExpand = (forumId: string) => {
         setExpandedStates((prevState) => ({
             ...prevState,
@@ -231,7 +230,10 @@ function Profile() {
     };
 
     const toggleUpvote = async (forumId: string) => {
+        if (voteLoading) return; // Prevent multiple clicks during an ongoing operation
+
         try {
+            setVoteLoading(true); // Set loading to true at the start
             const { data: { user } } = await supabase.auth.getUser();
             const currentUserID = user?.id;
 
@@ -357,11 +359,17 @@ function Profile() {
             }
         } catch (error) {
             console.error("Error toggling upvote:", error);
+        } finally {
+            setVoteLoading(false); // Reset the loading state regardless of success/error
         }
     };
 
     const toggleDownvote = async (forumId: string) => {
+        if (voteLoading) return; // Prevent multiple clicks during an ongoing operation
+
         try {
+            setVoteLoading(true); // Set loading to true at the start
+
             const { data: { user } } = await supabase.auth.getUser();
             const currentUserID = user?.id;
 
@@ -421,6 +429,7 @@ function Profile() {
                 );
 
                 let newOpenedForumData = openedForumData;
+                console.log("1", openedForumData)
                 if (newOpenedForumData && isCurrentlyDownvoted) {
                     newOpenedForumData.downvotes -= 1;
                 } else if (newOpenedForumData && !isCurrentlyDownvoted) {
@@ -429,9 +438,12 @@ function Profile() {
 
                 if (newOpenedForumData && upvoteStates[forumId]) {
                     newOpenedForumData.upvotes -= 1;
-                } else if (newOpenedForumData && !upvoteStates[forumId]) {
-                    newOpenedForumData.upvotes += 1;
                 }
+                // else if (newOpenedForumData && !upvoteStates[forumId]) {
+                //     newOpenedForumData.upvotes += 1;
+                // }
+
+                console.log(newOpenedForumData, openedForumData)
 
                 setOpenedForumData(newOpenedForumData)
             }
@@ -486,6 +498,8 @@ function Profile() {
             }
         } catch (error) {
             console.error("Error toggling downvote:", error);
+        } finally {
+            setVoteLoading(false); // Reset the loading state regardless of success/error
         }
     };
 
@@ -880,6 +894,7 @@ function Profile() {
                                                                             className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
                                                                                 }`}
                                                                             onClick={() => toggleUpvote(forum.forum_id)}
+                                                                            style={{ pointerEvents: voteLoading ? 'none' : 'auto' }}
                                                                         >
                                                                             <svg
                                                                                 width="24"
@@ -906,6 +921,7 @@ function Profile() {
                                                                             className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
                                                                                 }`}
                                                                             onClick={() => toggleDownvote(forum.forum_id)}
+                                                                            style={{ pointerEvents: voteLoading ? 'none' : 'auto' }}
                                                                         >
                                                                             <svg
                                                                                 width="24"
@@ -1138,14 +1154,17 @@ function Profile() {
                         </div>
                     </div>
 
-                    <AlertDialog open={forumDialog} onOpenChange={(isOpen) => {
-                        setForumDialog(isOpen);
+                    <AlertDialog
+                        open={forumDialog}
+                        onOpenChange={(isOpen) => {
+                            setForumDialog(isOpen);
 
-                        // Run custom logic only when the dialog closes
-                        if (!isOpen) {
-                            closeForumDialog()
-                        }
-                    }}>
+                            // Run custom logic only when the dialog closes
+                            if (!isOpen) {
+                                closeForumDialog()
+                            }
+                        }}
+                    >
                         <AlertDialogContent className="w-[70%] min-w-[1400px] h-[90%] z-[9998] p-0 border-none pointer-events-none">
                             <AlertDialogCancel
                                 onClick={closeForumDialog}
@@ -1165,10 +1184,7 @@ function Profile() {
 
                                 <div className="w-[30%] h-full max-h-full overflow-auto p-6 relative">
                                     <div className="flex gap-2 items-center">
-                                        <Avatar
-                                            onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "") }}
-                                            className="cursor-pointer"
-                                        >
+                                        <Avatar onClick={(e) => { e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`) }} className="cursor-pointer">
                                             <AvatarImage src="https://github.com/shadcn.png" />
                                             <AvatarFallback>
                                                 CN
@@ -1177,7 +1193,7 @@ function Profile() {
                                         <Label
                                             htmlFor=""
                                             className="text-md text-gray-700 cursor-pointer"
-                                            onClick={(e) => { e.stopPropagation(); goToProfile(openedForumData?.uid || "") }}
+                                            onClick={(e) => { e.stopPropagation(); navigate(`/profile/${openedForumData?.uid}`) }}
                                         >
                                             {openedForumData?.profiles?.first_name}{" "}
                                             {openedForumData?.profiles?.last_name}
@@ -1204,8 +1220,9 @@ function Profile() {
                                             <div className="flex w-fit border rounded-full">
                                                 <div
                                                     className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none 
-                                    ${upvoteStates[openedForumData?.forum_id || 1] ? "bg-green-100" : ""}`}
+                                            ${upvoteStates[openedForumData?.forum_id || 1] ? "bg-green-100" : ""}`}
                                                     onClick={() => toggleUpvote(openedForumData?.forum_id || "1")}
+                                                    style={{ pointerEvents: voteLoading ? 'none' : 'auto' }}
                                                 >
                                                     <svg
                                                         width="24"
@@ -1231,9 +1248,9 @@ function Profile() {
                                                 </div>
                                                 <div
                                                     className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none 
-                                    ${downvoteStates[openedForumData?.forum_id || 1] ? "bg-red-100" : ""}
-                                `}
+                                                                ${downvoteStates[openedForumData?.forum_id || 1] ? "bg-red-100" : ""}`}
                                                     onClick={() => toggleDownvote(openedForumData?.forum_id || "1")}
+                                                    style={{ pointerEvents: voteLoading ? 'none' : 'auto' }} // Disable clicks during loading
                                                 >
                                                     <svg
                                                         width="24"
@@ -1261,7 +1278,7 @@ function Profile() {
                                                     <div className="flex gap-4 qwe rrrrrrrrrrrrw-full">
                                                         {/* Avatar */}
                                                         <Avatar
-                                                            onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid) }}
+                                                            onClick={(e) => { e.stopPropagation(); navigate(`/profile/${comment.uid}`) }}
                                                             className="flex-shrink-0 cursor-pointer"
                                                         >
                                                             <AvatarImage src="https://github.com/shadcn.png" />
@@ -1276,7 +1293,7 @@ function Profile() {
                                                             <Label
                                                                 htmlFor=""
                                                                 className="text-md text-gray-700 cursor-pointer"
-                                                                onClick={(e) => { e.stopPropagation(); goToProfile(comment.uid) }}
+                                                                onClick={(e) => { e.stopPropagation(); navigate(`/profile/${comment.uid}`) }}
                                                             >
                                                                 {comment.first_name + " " + comment.last_name}
                                                             </Label>
@@ -1296,8 +1313,8 @@ function Profile() {
                                                         </Label>
 
                                                         {/* <Button className="text-gray-700 m-0 p-0" variant="link">
-                                            Reply
-                                        </Button> */}
+                                                    Reply
+                                                </Button> */}
 
                                                         {/* Conditionally show Delete button only for the logged-in user's comments */}
                                                         {comment.uid === loggedInUser?.id && (
@@ -1318,7 +1335,6 @@ function Profile() {
                                     </div>
 
                                     <div className="w-full h-24 sticky bottom-0 shadow-sm">
-
                                         <Textarea className="bg-gray-50 h-full resize-none" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
 
                                         <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
