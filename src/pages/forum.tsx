@@ -78,6 +78,7 @@ function Forum() {
     const [searchParams] = useSearchParams();
 
     const [forums, setForums] = useState<Forum[]>([]);
+    const [filteredForums, setFilteredForums] = useState<Forum[]>([]);
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
     const [upvoteStates, setUpvoteStates] = useState<Record<string, boolean>>({});
     const [downvoteStates, setDownvoteStates] = useState<Record<string, boolean>>({});
@@ -115,16 +116,16 @@ function Forum() {
             const { data: forums, error: forumsError } = await supabase
                 .from("forums")
                 .select(`
-                    forum_id,
-                    uid,
-                    title,
-                    description,
-                    upvotes,
-                    downvotes,
-                    count_comments,
-                    date_created,
-                    links_imgs
-                `);
+                forum_id,
+                uid,
+                title,
+                description,
+                upvotes,
+                downvotes,
+                count_comments,
+                date_created,
+                links_imgs
+            `).order('date_created', { ascending: false });
 
             if (forumsError) throw forumsError;
 
@@ -207,6 +208,10 @@ function Forum() {
             }
         }
     }, [forums, forum_id]);
+
+    useEffect(() => {
+        setFilteredForums(forums)
+    }, [forums])
 
 
     const toggleExpand = (forumId: string) => {
@@ -631,6 +636,70 @@ function Forum() {
         navigate('/forum');
     }
 
+    const orderForumByRelevance = () => {
+        setForums((prevForums) => {
+            // Sort forums by upvotes, then by count_comments, and finally by date_created
+            const sortedForums = [...prevForums].sort((a, b) => {
+                if (b.upvotes === a.upvotes) {
+                    if (b.count_comments === a.count_comments) {
+                        // Tertiary criterion: date_created (most recent first)
+                        return new Date(b.date_created).getTime() - new Date(a.date_created).getTime();
+                    }
+                    // Secondary criterion: count_comments
+                    return b.count_comments - a.count_comments;
+                }
+                // Primary criterion: upvotes
+                return b.upvotes - a.upvotes;
+            });
+            return sortedForums;
+        });
+    };
+
+    const orderForumByDate = () => {
+        setForums((prevForums) => {
+            // Helper function to extract only the date (day, month, year) for comparison
+            const getDateOnly = (dateString: string) => {
+                const date = new Date(dateString);
+                return date.toISOString().split('T')[0]; // Extract YYYY-MM-DD format
+            };
+
+            const sortedForums = [...prevForums].sort((a, b) => {
+                // Compare dates (day, month, year) only
+                const dateA = getDateOnly(a.date_created);
+                const dateB = getDateOnly(b.date_created);
+
+                if (dateA === dateB) {
+                    if (b.upvotes === a.upvotes) {
+                        // Tertiary criterion: count_comments
+                        return b.count_comments - a.count_comments;
+                    }
+                    // Secondary criterion: upvotes
+                    return b.upvotes - a.upvotes;
+                }
+                // Primary criterion: Compare dates (newest first)
+                return new Date(dateB).getTime() - new Date(dateA).getTime();
+            });
+
+            return sortedForums;
+        });
+    };
+
+    const showForumsWithTitle = (searchString: string) => {
+        setFilteredForums(forums)
+        setFilteredForums((prevForums) => {
+            // Normalize the search string for case-insensitive comparison
+            const normalizedSearchString = searchString.toLowerCase();
+
+            // Filter forums by checking if the title includes the search string
+            const filteredForums = prevForums.filter((forum) =>
+                forum.title.toLowerCase().includes(normalizedSearchString)
+            );
+
+            return filteredForums;
+        });
+    };
+
+
     const handleComment = async () => {
         if (!loggedInUser)
             navigate("/login")
@@ -777,13 +846,19 @@ function Forum() {
 
     return (
         <div className="flex m-auto h-full relative overflow-auto justify-center">
-            <ForumsSidebar openCreateSpace={openCreateSpace} closeCreateSpace={closeCreateSpace} />
+            <ForumsSidebar openCreateSpace={openCreateSpace}
+                closeCreateSpace={closeCreateSpace}
+                orderForumByRelevance={orderForumByRelevance}
+                orderForumByDate={orderForumByDate}
+                showForumsWithTitle={showForumsWithTitle}
+                forums={forums}
+            />
 
             <div className=" p-6 flex flex-col gap-6 h-fit">
-                {forums.length == 0 ?
+                {filteredForums.length == 0 ?
                     <div className="text-gray-500 m-auto"> No forums available at the moment. </div>
 
-                    : forums.map((forum) => {
+                    : filteredForums.map((forum) => {
                         const isUpvoted = upvoteStates[forum.forum_id] || false;
                         const isDownvoted = downvoteStates[forum.forum_id] || false;
 

@@ -8,6 +8,7 @@ import Dashboard from './pages/dashboard';
 import Forum from './pages/forum'; // Ensure this component opens dialogs
 import Faq from './pages/faq';
 import Profile from './pages/profile';
+import Settings from './pages/settings';
 
 function App() {
   return (
@@ -22,7 +23,7 @@ function App() {
       <Route path="/faq" element={<Faq />} />
       <Route path="/profile" element={<Dashboard />} />
       <Route path="/profile/:uid" element={<Dashboard />} />
-      <Route path="/settings" element={<Profile />} />
+      <Route path="/settings" element={<Dashboard />} />
     </Routes>
   );
 }

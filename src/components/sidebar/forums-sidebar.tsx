@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import '../../styling/output.css';
 import "non.geist"
 
@@ -18,12 +18,56 @@ import { Switch } from "../ui/switch";
 import { Separator } from "../ui/seperator";
 import { Button } from "../ui/button";
 
+// interface
+interface Forum {
+    forum_id: string;
+    uid: string;
+    title: string;
+    description: string;
+    upvotes: number;
+    downvotes: number;
+    count_comments: number;
+    date_created: string;
+    links_imgs: string[];
+    profiles: {
+        first_name: string;
+        last_name: string;
+    } | null;
+}
+
 type MyComponentProps = {
     openCreateSpace: () => void
     closeCreateSpace: () => void
+    orderForumByRelevance: () => void
+    orderForumByDate: () => void
+    showForumsWithTitle: (title:string) => void,
+    forums : any
 };
 
-function ForumsSidebar({ openCreateSpace, closeCreateSpace }: MyComponentProps) {
+function ForumsSidebar({ openCreateSpace, closeCreateSpace, orderForumByRelevance, orderForumByDate, showForumsWithTitle, forums }: MyComponentProps) {
+    const [searchValue, setSearchValue] = useState("")
+    const [sortByValue, setSortByValue] = useState("Recent")
+
+    const setSortBy = async (sortBy: string) => {
+        setSortByValue(sortBy)
+
+        if(sortBy === "Relevance"){
+            orderForumByRelevance()
+        }else if(sortBy === "Recent"){
+            orderForumByDate()
+        }
+    }
+
+    const searchForum = async (title: string) => {
+        setSearchValue(title)
+        showForumsWithTitle(title)
+    }
+
+    useEffect(() => {
+        setSortByValue(sortByValue)
+        searchForum(searchValue)
+    }, [forums])
+
     return (
         <div className="w-[250px] h-full border-r border-gray-300 p-6 sticky top-0">
             <div className="text-xl font-bold text-gray-800">
@@ -40,18 +84,18 @@ function ForumsSidebar({ openCreateSpace, closeCreateSpace }: MyComponentProps) 
                 <Input
                     placeholder="Search title"
                     className="rounded-full"
-                    //onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => searchForum(e.target.value)}
                 />
 
-                <Select defaultValue="name" /*onValueChange={(value) => setSortBy(value as "name" | "category")}*/>
+                <Select defaultValue="Recent" onValueChange={(value) => setSortBy(value)}>
                     <SelectTrigger className="rounded-full">
                         <SelectValue placeholder="Sort by" className="placeholder:text-white font-bold" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
                             <SelectLabel>Sort by</SelectLabel>
-                            <SelectItem value="name">Recent</SelectItem>
-                            <SelectItem value="category">Relevance</SelectItem>
+                            <SelectItem value="Recent">Recent</SelectItem>
+                            <SelectItem value="Relevance">Relevance</SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>

@@ -8,6 +8,7 @@ import Navbar from "../components/navbar/navbar";
 import Guides from "./guides";
 import Forum from "./forum";
 import Profile from "./profile";
+import Settings from "./settings";
 
 function Dashboard() {
   const location = useLocation();
@@ -20,6 +21,7 @@ function Dashboard() {
         {location.pathname.startsWith("/guides") && <Guides />}
         {location.pathname.startsWith("/forum") && <Forum />}
         {location.pathname.startsWith("/profile") && <Profile />}
+        {location.pathname.startsWith("/settings") && <Settings />}
       </div>
     </div>
   );
