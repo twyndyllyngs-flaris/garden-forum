@@ -1334,14 +1334,13 @@ function Profile() {
 
                                     </div>
 
-                                    <div className="w-full h-24 sticky bottom-0 shadow-sm">
-                                        <Textarea className="bg-gray-50 h-full resize-none" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
+                                    <div className="w-[390px] h-24 sticky -bottom-6 bg-white -mb-6 -ml-6 -mr-6 px-3 pb-3 box-content">
+                                        <Textarea className="bg-gray-50 h-full resize-none shadow-sm" placeholder={loggedInUser ? "Comment as " + loggedInUser?.user_metadata.displayName : "Login to comment"} required value={newComment} onChange={(e) => setNewComment(e.target.value)} />
 
-                                        <div className="absolute right-2 bottom-2 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
+                                        <div className="absolute right-5 bottom-5 cursor-pointer hover:bg-gray-200 w-10 h-10 rounded-full flex justify-center items-center" onClick={handleComment}>
                                             <FaPaperPlane className="absolute w-5 h-5" color="#3285a8" />
                                         </div>
                                     </div>
-
                                 </div>
                             </div>
                         </AlertDialogContent>
