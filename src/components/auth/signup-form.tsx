@@ -53,10 +53,11 @@ export function SignupForm() {
         .replace(/\b\w/g, (char) => char.toUpperCase());
     };
 
-    // Process inputs
-    setFirstName(toPascalCase(firstName));
-    setLastName(toPascalCase(lastName));
-    setEmail(email.trim().toLowerCase());
+    const first_name = toPascalCase(firstName)
+    const last_name = toPascalCase(lastName)
+    const processedEmail:string = email.trim().toLowerCase()
+
+    console.log(first_name, last_name, processedEmail)
 
     try {
       // Check if the email is confirmed
@@ -84,10 +85,10 @@ export function SignupForm() {
         password,
         options: {
           data: {
-            displayName: `${firstName} ${lastName}`, // Store full name in Supabase Auth
+            displayName: `${first_name} ${last_name}`, // Store full name in Supabase Auth
             providerType: "password",
-            first_name: firstName, // Store first name in metadata
-            last_name: lastName,   // Store last name in metadata
+            first_name: first_name, // Store first name in metadata
+            last_name: last_name,   // Store last name in metadata
           },
         },
       });

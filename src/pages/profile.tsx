@@ -91,7 +91,7 @@ function Profile() {
     const [expandedStates, setExpandedStates] = useState<Record<string, boolean>>({});
     const [upvoteStates, setUpvoteStates] = useState<Record<string, boolean>>({});
     const [downvoteStates, setDownvoteStates] = useState<Record<string, boolean>>({});
-    const [voteLoading, setVoteLoading] = useState(false);
+    const [voteLocks, setVoteLocks] = useState<Record<string, boolean>>({});
 
     const [forumDialog, setForumDialog] = useState(false)
     const [openedForumData, setOpenedForumData] = useState<Forum | null>(null)
@@ -230,10 +230,11 @@ function Profile() {
     };
 
     const toggleUpvote = async (forumId: string) => {
-        if (voteLoading) return; // Prevent multiple clicks during an ongoing operation
+        if (voteLocks[forumId]) return; // Prevent action if locked
+
+        setVoteLocks((prev) => ({ ...prev, [forumId]: true })); // Lock the vote action
 
         try {
-            setVoteLoading(true); // Set loading to true at the start
             const { data: { user } } = await supabase.auth.getUser();
             const currentUserID = user?.id;
 
@@ -360,16 +361,16 @@ function Profile() {
         } catch (error) {
             console.error("Error toggling upvote:", error);
         } finally {
-            setVoteLoading(false); // Reset the loading state regardless of success/error
+            setVoteLocks((prev) => ({ ...prev, [forumId]: false })); // Unlock the vote action
         }
     };
 
     const toggleDownvote = async (forumId: string) => {
-        if (voteLoading) return; // Prevent multiple clicks during an ongoing operation
+        if (voteLocks[forumId]) return; // Prevent action if locked
+
+        setVoteLocks((prev) => ({ ...prev, [forumId]: true })); // Lock the vote action
 
         try {
-            setVoteLoading(true); // Set loading to true at the start
-
             const { data: { user } } = await supabase.auth.getUser();
             const currentUserID = user?.id;
 
@@ -499,7 +500,7 @@ function Profile() {
         } catch (error) {
             console.error("Error toggling downvote:", error);
         } finally {
-            setVoteLoading(false); // Reset the loading state regardless of success/error
+            setVoteLocks((prev) => ({ ...prev, [forumId]: false })); // Unlock the vote action
         }
     };
 
@@ -894,7 +895,6 @@ function Profile() {
                                                                             className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none ${isUpvoted ? "bg-green-100" : ""
                                                                                 }`}
                                                                             onClick={() => toggleUpvote(forum.forum_id)}
-                                                                            style={{ pointerEvents: voteLoading ? 'none' : 'auto' }}
                                                                         >
                                                                             <svg
                                                                                 width="24"
@@ -921,7 +921,6 @@ function Profile() {
                                                                             className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none ${isDownvoted ? "bg-red-100" : ""
                                                                                 }`}
                                                                             onClick={() => toggleDownvote(forum.forum_id)}
-                                                                            style={{ pointerEvents: voteLoading ? 'none' : 'auto' }}
                                                                         >
                                                                             <svg
                                                                                 width="24"
@@ -1222,7 +1221,6 @@ function Profile() {
                                                     className={`flex-1 flex items-center border-r border-gray-200 hover:bg-gray-100 rounded-tl-full rounded-bl-full gap-1 p-1 px-2 cursor-pointer select-none 
                                             ${upvoteStates[openedForumData?.forum_id || 1] ? "bg-green-100" : ""}`}
                                                     onClick={() => toggleUpvote(openedForumData?.forum_id || "1")}
-                                                    style={{ pointerEvents: voteLoading ? 'none' : 'auto' }}
                                                 >
                                                     <svg
                                                         width="24"
@@ -1250,7 +1248,6 @@ function Profile() {
                                                     className={`p-1 px-2 hover:bg-gray-100 rounded-tr-full rounded-br-full cursor-pointer select-none 
                                                                 ${downvoteStates[openedForumData?.forum_id || 1] ? "bg-red-100" : ""}`}
                                                     onClick={() => toggleDownvote(openedForumData?.forum_id || "1")}
-                                                    style={{ pointerEvents: voteLoading ? 'none' : 'auto' }} // Disable clicks during loading
                                                 >
                                                     <svg
                                                         width="24"
