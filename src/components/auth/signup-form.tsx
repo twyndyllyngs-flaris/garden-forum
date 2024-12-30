@@ -89,6 +89,7 @@ export function SignupForm() {
             providerType: "password",
             first_name: first_name, // Store first name in metadata
             last_name: last_name,   // Store last name in metadata
+            showUpvotes: false,
           },
         },
       });
