@@ -883,8 +883,8 @@ function Profile () {
                   </svg>
                   <h4 className=' text-gray-500' onClick={test}>
                     Joined since{' '}
-                    {loggedInUser
-                      ? formatDateToMonthYear(loggedInUser?.created_at)
+                    {profile
+                      ? formatDateToMonthYear(profile?.created_at)
                       : '2024'}
                   </h4>
                 </div>
