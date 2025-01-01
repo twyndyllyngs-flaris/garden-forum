@@ -63,6 +63,7 @@ interface Forum {
     first_name: string
     last_name: string
     profile_link: string
+    username: string
   } | null
 }
 
@@ -88,6 +89,8 @@ function Profile () {
     {}
   )
   const [upvoteStates, setUpvoteStates] = useState<Record<string, boolean>>({})
+  const [openedProfileUserUpvoteStates, setOpenedProfileUserUpvoteStates] =
+    useState<any[] | null>([])
   const [downvoteStates, setDownvoteStates] = useState<Record<string, boolean>>(
     {}
   )
@@ -142,7 +145,7 @@ function Profile () {
 
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('uid, first_name, last_name, profile_link')
+        .select('uid, first_name, last_name, profile_link, username')
         .in('uid', profileIds)
 
       if (profilesError) throw profilesError
@@ -211,7 +214,7 @@ function Profile () {
       const { data: userProfile, error: forumsError } = await supabase
         .from('profiles')
         .select(`*`)
-        .eq('uid', uid)
+        .eq('username', uid)
 
       if (forumsError) {
         console.error(forumsError)
@@ -229,6 +232,26 @@ function Profile () {
 
     getUserProfile()
   }, [uid])
+
+  useEffect(() => {
+    if (!profile) return
+
+    const getUserVotes = async () => {
+      const { data, error } = await supabase
+        .from('forum_votes')
+        .select('*')
+        .eq('uid', profile.uid) // Replace 'value' with the actual uid you are filtering by
+        .eq('vote_type', 'upvote') // Filter for 'upvote' votes
+
+      if (error) {
+        console.error('Error fetching data:', error.message)
+      } else {
+        setOpenedProfileUserUpvoteStates(data)
+      }
+    }
+
+    getUserVotes()
+  }, [profile])
 
   const toggleExpand = (forumId: string) => {
     setExpandedStates(prevState => ({
@@ -540,7 +563,8 @@ function Profile () {
                   date_created,
                   profiles(
                       first_name,
-                      last_name
+                      last_name,
+                      username
                   )
               `
       )
@@ -557,9 +581,9 @@ function Profile () {
       uid: origCommentInterface.uid,
       parent_id: origCommentInterface.parent_id,
       content: origCommentInterface.content,
-      date_created: origCommentInterface.date_created,
       first_name: Object.values(origCommentInterface.profiles)[1],
-      last_name: Object.values(origCommentInterface.profiles)[0]
+      last_name: Object.values(origCommentInterface.profiles)[2],
+      username: Object.values(origCommentInterface.profiles)[0]
     }))
 
     const commentIdInSearch = searchParams.get('comment_id')
@@ -745,8 +769,8 @@ function Profile () {
   }
 
   const goToProfile = async (uid: string) => {
+    setForumDialog(false)
     navigate(`/profile/${uid}`)
-    closeForumDialog()
   }
 
   const getInitials = (firstName: string, lastName: string): string => {
@@ -790,7 +814,7 @@ function Profile () {
         <div className='min-h-full overflow-auto flex justify-center'>
           <div className='w-[50%] box-border p-10 border-l border-r border-gray-200'>
             {/* profile labels */}
-            <div className='flex bg-gray-100 rounded'>
+            <div className='flex bg-gray-100 rounded p-5'>
               <div className='w-[400px] h-60 flex justify-center items-center'>
                 <Avatar
                   onClick={e => e.stopPropagation()}
@@ -802,10 +826,10 @@ function Profile () {
                   </AvatarFallback>
                 </Avatar>
               </div>
-              <div className='w-full flex flex-col gap-3 justify-center'>
+              <div className='w-full flex flex-col gap-2 justify-center'>
                 <div className='flex gap-4 items-center'>
                   <h1 className='font-semibold text-gray-700 text-lg'>
-                    {profile?.first_name + ' ' + profile?.last_name}
+                    @{profile?.username}
                   </h1>
                   {loggedInUser?.id === uid && (
                     <Button
@@ -820,11 +844,15 @@ function Profile () {
                 </div>
 
                 <h2 className='font-semibold text-gray-700'>
-                  {forums.filter(forum => forum.uid === uid).length} posts
+                  {forums.filter(forum => forum.profiles?.username === uid).length} posts
+                </h2>
+
+                <h2 className=' text-gray-700'>
+                  {profile?.first_name + ' ' + profile?.last_name}
                 </h2>
                 <h3 className='text-gray-700'>
-                  {profile && profile.description
-                    ? profile.description
+                  {profile && profile.bio
+                    ? profile.bio
                     : 'No description available'}
                 </h3>
                 <div className='flex items-center mt-4'>
@@ -947,7 +975,7 @@ function Profile () {
                       : profile && profile.first_name + "'s"}{' '}
                     Posts
                   </TabsTrigger>
-                  {loggedInUser?.id === uid && (
+                  {(profile.show_upvoted || uid === profile.username) && (
                     <TabsTrigger
                       value='Upvoted Posts'
                       className='transition-none flex gap-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-t-2 
@@ -979,14 +1007,14 @@ function Profile () {
 
                 <TabsContent value='My Posts'>
                   <div className='flex flex-col gap-6'>
-                    {forums.filter(forum => forum.uid === uid).length === 0 ? (
+                    {forums.filter(forum => forum?.profiles?.username === uid).length === 0 ? (
                       <div className='text-gray-500 mt-10 mx-auto'>
                         {' '}
                         Your forums will show here.{' '}
                       </div>
                     ) : (
                       forums
-                        .filter(forum => forum.uid === uid)
+                        .filter(forum => forum?.profiles?.username === uid)
                         .map(forum => {
                           const isUpvoted =
                             upvoteStates[forum.forum_id] || false
@@ -1061,8 +1089,8 @@ function Profile () {
                                     className='text-md text-gray-700 cursor-pointer'
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    {forum.profiles?.first_name}{' '}
-                                    {forum.profiles?.last_name}
+                                    
+                                    {forum.profiles?.username}
                                   </Label>
 
                                   {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
@@ -1196,19 +1224,30 @@ function Profile () {
                     )}
                   </div>
                 </TabsContent>
-
-                {loggedInUser?.id === uid && (
+                {/* (profile.show_upvoted || uid === loggedInUser?.id) */}
+                {(profile.show_upvoted || uid === profile.username) && (
                   <TabsContent value='Upvoted Posts'>
                     <div className='flex flex-col gap-6'>
-                      {forums.filter(forum => upvoteStates[forum.forum_id])
-                        .length === 0 ? (
+                      {forums.filter(
+                        forum =>
+                          openedProfileUserUpvoteStates &&
+                          openedProfileUserUpvoteStates.some(
+                            votes => forum.forum_id === votes.forum_id
+                          )
+                      ).length === 0 ? (
                         <div className='text-gray-500 mt-10 mx-auto'>
                           {' '}
                           Your upvoted forums will show here.{' '}
                         </div>
                       ) : (
                         forums
-                          .filter(forum => upvoteStates[forum.forum_id])
+                          .filter(
+                            forum =>
+                              openedProfileUserUpvoteStates &&
+                              openedProfileUserUpvoteStates.some(
+                                votes => forum.forum_id === votes.forum_id
+                              )
+                          )
                           .map(forum => {
                             const isUpvoted =
                               upvoteStates[forum.forum_id] || false
@@ -1262,7 +1301,7 @@ function Profile () {
                                     <Avatar
                                       onClick={e => {
                                         e.stopPropagation()
-                                        goToProfile(forum.uid)
+                                        goToProfile(forum && forum.profiles ? forum.profiles?.username : "")
                                       }}
                                       className='min-w-[45px] min-h-[45px]'
                                     >
@@ -1286,11 +1325,10 @@ function Profile () {
                                       className='text-md text-gray-700 cursor-pointer'
                                       onClick={e => {
                                         e.stopPropagation()
-                                        goToProfile(forum.uid)
+                                        goToProfile(forum && forum.profiles ? forum.profiles?.username : "")
                                       }}
                                     >
-                                      {forum.profiles?.first_name}{' '}
-                                      {forum.profiles?.last_name}
+                                      {forum.profiles?.username}
                                     </Label>
 
                                     {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
@@ -1469,7 +1507,8 @@ function Profile () {
                     <Avatar
                       onClick={e => {
                         e.stopPropagation()
-                        navigate(`/profile/${openedForumData?.uid}`)
+                        navigate(`/profile/${openedForumData?.profiles?.username}`)
+                        closeForumDialog()
                       }}
                       className='cursor-pointer min-w-[45px] min-h-[45px]'
                     >
@@ -1487,11 +1526,11 @@ function Profile () {
                       className='text-md text-gray-700 cursor-pointer'
                       onClick={e => {
                         e.stopPropagation()
-                        navigate(`/profile/${openedForumData?.uid}`)
+                        navigate(`/profile/${openedForumData?.profiles?.username}`)
+                        closeForumDialog()
                       }}
                     >
-                      {openedForumData?.profiles?.first_name}{' '}
-                      {openedForumData?.profiles?.last_name}
+                      {openedForumData?.profiles?.username}
                     </Label>
                     <Label className='text-gray-500 ml-auto'>
                       {openedForumData?.date_created
@@ -1609,7 +1648,8 @@ function Profile () {
                               <Avatar
                                 onClick={e => {
                                   e.stopPropagation()
-                                  navigate(`/profile/${comment.uid}`)
+                                  navigate(`/profile/${comment.username}`)
+                                  closeForumDialog()
                                 }}
                                 className='flex-shrink-0 cursor-pointer min-w-[45px] min-h-[45px]'
                               >
@@ -1636,10 +1676,11 @@ function Profile () {
                                   className='text-md text-gray-700 cursor-pointer'
                                   onClick={e => {
                                     e.stopPropagation()
-                                    navigate(`/profile/${comment.uid}`)
+                                    navigate(`/profile/${comment.username}`)
+                                    closeForumDialog()
                                   }}
                                 >
-                                  {comment.first_name + ' ' + comment.last_name}
+                                  {comment.username}
                                 </Label>
 
                                 {/* Comment Text */}

@@ -62,6 +62,7 @@ interface Forum {
     first_name: string
     last_name: string
     profile_link: string
+    username: string
   } | null
 }
 
@@ -150,7 +151,7 @@ function Forum () {
 
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('uid, first_name, last_name, profile_link')
+        .select('uid, first_name, last_name, profile_link, username')
         .in('uid', profileIds)
 
       if (profilesError) throw profilesError
@@ -652,7 +653,8 @@ function Forum () {
                   date_created,
                   profiles(
                       first_name,
-                      last_name
+                      last_name,
+                      username
                   )
               `
       )
@@ -671,7 +673,8 @@ function Forum () {
       content: origCommentInterface.content,
       date_created: origCommentInterface.date_created,
       first_name: Object.values(origCommentInterface.profiles)[1],
-      last_name: Object.values(origCommentInterface.profiles)[0]
+      last_name: Object.values(origCommentInterface.profiles)[2],
+      username: Object.values(origCommentInterface.profiles)[0]
     }))
 
     const commentIdInSearch = searchParams.get('comment_id')
@@ -1002,7 +1005,7 @@ function Forum () {
                       id='avatar'
                       onClick={e => {
                         e.stopPropagation()
-                        navigate(`/profile/${forum.uid}`)
+                        navigate(`/profile/${forum.profiles?.username}`)
                       }}
                       className='min-w-[45px] min-h-[45px]'
                     >
@@ -1022,10 +1025,10 @@ function Forum () {
                       className='text-md text-gray-700 cursor-pointer'
                       onClick={e => {
                         e.stopPropagation()
-                        navigate(`/profile/${forum.uid}`)
+                        navigate(`/profile/${forum.profiles?.username}`)
                       }}
                     >
-                      {forum.profiles?.first_name} {forum.profiles?.last_name}
+                      {forum.profiles?.username}
                     </Label>
 
                     {/* <div className="text-sm text-blue-600 relative right-1">•&nbsp;&nbsp;Follow</div> */}
@@ -1231,7 +1234,7 @@ function Forum () {
                 <Avatar
                   onClick={e => {
                     e.stopPropagation()
-                    navigate(`/profile/${openedForumData?.uid}`)
+                    navigate(`/profile/${openedForumData?.profiles?.username}`)
                   }}
                   className='cursor-pointer min-w-[45px] min-h-[45px]'
                 >
@@ -1252,11 +1255,10 @@ function Forum () {
                   className='text-md text-gray-700 cursor-pointer'
                   onClick={e => {
                     e.stopPropagation()
-                    navigate(`/profile/${openedForumData?.uid}`)
+                    navigate(`/profile/${openedForumData?.profiles?.username}`)
                   }}
                 >
-                  {openedForumData?.profiles?.first_name}{' '}
-                  {openedForumData?.profiles?.last_name}
+                  {openedForumData?.profiles?.username}
                 </Label>
                 <Label className='text-gray-500 ml-auto'>
                   {openedForumData?.date_created
@@ -1372,7 +1374,7 @@ function Forum () {
                         <Avatar
                           onClick={e => {
                             e.stopPropagation()
-                            navigate(`/profile/${comment.uid}`)
+                            navigate(`/profile/${comment.username}`)
                           }}
                           className='flex-shrink-0 cursor-pointer min-w-[45px] min-h-[45px]'
                         >
@@ -1395,10 +1397,10 @@ function Forum () {
                             className='text-md text-gray-700 cursor-pointer'
                             onClick={e => {
                               e.stopPropagation()
-                              navigate(`/profile/${comment.uid}`)
+                              navigate(`/profile/${comment.username}`)
                             }}
                           >
-                            {comment.first_name + ' ' + comment.last_name}
+                            {comment.username}
                           </Label>
 
                           {/* Comment Text */}

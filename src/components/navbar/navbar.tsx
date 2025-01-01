@@ -441,7 +441,7 @@ function Navbar () {
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
                 <DropdownMenuItem
-                  onClick={() => navigate(`/profile/${user.id}`)}
+                  onClick={() => navigate(`/profile/${userProfile.username}`)}
                   className='cursor-pointer'
                 >
                   <UserIcon />

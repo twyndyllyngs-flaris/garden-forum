@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react' // Import useState
 import { supabase } from '../config/supabase/supabaseClient' // Adjust the import path as needed
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import Cropper, { ReactCropperElement } from 'react-cropper'
 import 'cropperjs/dist/cropper.css'
 import '../styling/output.css'
@@ -44,7 +44,7 @@ interface FormValues {
   username: string
   firstname: string
   lastname: string
-  showupvote: boolean
+  show_upvoted: boolean
 }
 
 interface AlertDialogContent {
@@ -81,6 +81,46 @@ function Settings () {
   const [croppedImage, setCroppedImage] = useState<string | null>(null) // Final cropped image
   // Explicitly cast the ref to match ReactCropperElement
   const cropperRef = useRef<ReactCropperElement>(null)
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    setError,
+    reset,
+    control,
+    formState: { isSubmitting, errors }
+  } = useForm<FormValues>({
+    defaultValues: {
+      show_upvoted: false // Set the default value for the switch
+    }
+  })
+
+  const currentValues = useWatch({ control }) // Watch all form values
+  const [isFormChanged, setIsFormChanged] = useState(false)
+
+  // Check for changes and update `isFormChanged`
+  useEffect(() => {
+    if (!userProfile) return
+
+    const userProfileReduced = {
+      firstname: userProfile.first_name,
+      lastname: userProfile.last_name,
+      username: userProfile.username,
+      bio: userProfile.bio,
+      show_upvoted: userProfile.show_upvoted
+    }
+
+    setIsFormChanged(
+      JSON.stringify(currentValues) !== JSON.stringify(userProfileReduced)
+    )
+  }, [currentValues, userProfile])
+
+  useEffect(() => {
+    if (!userProfile) return
+
+    setValue('show_upvoted', userProfile.show_upvoted)
+  }, [setValue, userProfile]) // Trigger the effect when the component mounts
 
   // Handle file input change
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -167,23 +207,86 @@ function Settings () {
     }
   }
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    formState: { isSubmitting, errors }
-  } = useForm<FormValues>({
-    defaultValues: { showupvote: true } // Default state is false
-  })
+  const onSubmit = async (data: FormValues) => {
+    const setDialogContentData = async () => {
+      setDialogContent({
+        title: 'Confirm update',
+        content:
+          'Proceed on updating your details? your info reflects on how other users see you',
+        buttonText: 'Update',
+        action: async () => updateUserDetails(data),
+        cancel: () => {
+          setDialog(false)
+        }
+      })
+    }
 
-  const onSubmit = (data: FormValues) => {
-    console.log(data)
+    await setDialogContentData()
+    setDialog(true)
   }
 
-  // Handle character count update
+  const updateUserDetails = async (data: FormValues) => {
+    // Check if the username has changed
+    if (data.username !== userProfile?.username) {
+      // If the username has changed, check if it's already taken
+      const { data: existingUsernames, error: usernameError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', data.username) // Look for matching username
+        .neq('uid', userProfile?.uid) // Exclude current user by UID
+
+      if (usernameError) {
+        console.error('Error checking username:', usernameError.message)
+        return
+      }
+
+      if (existingUsernames?.length > 0) {
+        // Display an error if the username is already taken
+        setError('username', {
+          type: 'manual',
+          message: 'Username is already taken'
+        })
+        return
+      }
+    }
+
+    // Map form data to database fields
+    const profileUpdate = {
+      first_name: data.firstname,
+      last_name: data.lastname,
+      username: data.username,
+      bio: data.bio,
+      show_upvoted: data.show_upvoted
+    }
+
+    try {
+      // Ensure `userProfile` contains the required `uid`
+      if (!userProfile?.uid) {
+        console.error('User ID is not available.')
+        return
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update(profileUpdate)
+        .eq('uid', userProfile.uid) // Match the user's record by UID
+
+      if (error) {
+        console.error('Error updating profile:', error.message)
+      } else {
+        console.log('Profile updated successfully!')
+      }
+    } catch (err) {
+      console.error('Unexpected error updating profile:', err)
+    } finally {
+      window.location.reload()
+    }
+  }
+
   const handleCharCount = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setCharCount(e.target.value.length)
+    const value = e.target.value
+    setValue('bio', value) // Update React Hook Form's state
+    setCharCount(value.length) // Update character count
   }
 
   useEffect(() => {
@@ -214,11 +317,9 @@ function Settings () {
           lastname: profiles[0].last_name || '',
           username: profiles[0].username || '',
           bio: profiles[0].bio || '',
-          showupvote: loggedInUser.user_metadata.showupvotes
+          show_upvoted: profiles[0].show_upvoted || false
         })
 
-        console.log(profiles)
-        console.log(loggedInUser)
         setCroppedImage(profiles[0].profile_link)
       }
     }
@@ -379,9 +480,9 @@ function Settings () {
             <div className='relative'>
               <Textarea
                 {...register('bio', {
-                  required: 'Bio is required',
-                  maxLength: { value: 150, message: 'Max of 150 characters' },
-                  minLength: { value: 2, message: 'Min of 2 characters' }
+                  // required: 'Bio is required',
+                  maxLength: { value: 150, message: 'Max of 150 characters' }
+                  // minLength: { value: 2, message: 'Min of 2 characters' }
                 })}
                 className='h-16'
                 id='bio'
@@ -417,6 +518,7 @@ function Settings () {
                         {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
                     </div> */}
 
+          {/* // Form input for username */}
           <div className='grid w-full items-center gap-1.5'>
             <Label
               htmlFor='username'
@@ -426,10 +528,28 @@ function Settings () {
             </Label>
             <Input
               {...register('username', {
-                required: 'Username is required', // Custom error message for required
+                required: 'Username is required',
                 minLength: {
                   value: 3,
-                  message: 'Username must be at least 3 characters long' // Minimum length validation
+                  message: 'Username must be at least 3 characters long'
+                },
+                validate: async value => {
+                  // Check if username is unique when it's changed
+                  if (value !== userProfile?.username) {
+                    const { data: existingUsernames, error } = await supabase
+                      .from('profiles')
+                      .select('username')
+                      .eq('username', value) // Check for existing username
+                      .neq('uid', userProfile?.uid) // Exclude current user
+                    if (error) {
+                      console.error('Error checking username:', error.message)
+                      return 'Error checking username availability'
+                    }
+                    if (existingUsernames?.length > 0) {
+                      return 'Username is already taken'
+                    }
+                  }
+                  return true
                 }
               })}
               className='h-16'
@@ -437,7 +557,6 @@ function Settings () {
               id='username'
               placeholder='Username'
             />
-            {/* Error message display */}
             {errors.username && (
               <p className='text-red-500 text-sm'>{errors.username.message}</p>
             )}
@@ -508,26 +627,29 @@ function Settings () {
 
           <div className='flex w-full items-center border p-4 rounded-2xl h-16'>
             <Label
-              htmlFor='showupvote'
+              htmlFor='show_upvoted'
               className='text-gray-700 text-md font-semibold cursor-pointer'
             >
               Show upvoted posts
             </Label>
             <Switch
-              {...register('showupvote')} // Register the switch value directly with react-hook-form
-              id='showupvote'
+              {...register('show_upvoted')}
+              id='show_upvoted'
               className='ml-auto'
-              // Hardcoded, for example purposes (you can bind this to your state)
-              onCheckedChange={checked => {
-                // Manually trigger `setValue` with a boolean value for the field
-                setValue('showupvote', checked)
-              }}
+              checked={currentValues?.show_upvoted} // Use the watched value from form state
+              onCheckedChange={checked => setValue('show_upvoted', checked)}
             />
           </div>
-
-          <Button type='submit' className='w-fit ml-auto h-12'>
-            {' '}
-            Submit Changes{' '}
+          <Button
+            type='submit'
+            className='w-fit ml-auto h-12'
+            disabled={!isFormChanged}
+          >
+            {isSubmitting ? (
+              <div className='spinner-border animate-spin w-5 h-5 border-4 border-solid border-gray-200 border-t-blue-600 rounded-full'></div> // Replace with your spinner
+            ) : (
+              'Submit Changes'
+            )}
           </Button>
         </form>
       </div>

@@ -1075,8 +1075,8 @@ body {
   min-height: 4rem;
 }
 
-.min-h-\[50px\] {
-  min-height: 50px;
+.min-h-\[45px\] {
+  min-height: 45px;
 }
 
 .min-h-\[600px\] {
@@ -1093,14 +1093,6 @@ body {
 
 .min-h-screen {
   min-height: 100vh;
-}
-
-.min-h-\[40px\] {
-  min-height: 40px;
-}
-
-.min-h-\[45px\] {
-  min-height: 45px;
 }
 
 .w-10 {
@@ -1239,12 +1231,12 @@ body {
   min-width: 300px;
 }
 
-.min-w-\[500px\] {
-  min-width: 500px;
+.min-w-\[45px\] {
+  min-width: 45px;
 }
 
-.min-w-\[50px\] {
-  min-width: 50px;
+.min-w-\[500px\] {
+  min-width: 500px;
 }
 
 .min-w-\[600px\] {
@@ -1261,14 +1253,6 @@ body {
 
 .min-w-\[var\(--radix-select-trigger-width\)\] {
   min-width: var(--radix-select-trigger-width);
-}
-
-.min-w-\[40px\] {
-  min-width: 40px;
-}
-
-.min-w-\[45px\] {
-  min-width: 45px;
 }
 
 .max-w-\[300px\] {
@@ -1342,6 +1326,16 @@ body {
 .rotate-90 {
   --tw-rotate: 90deg;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 .cursor-default {
@@ -1550,6 +1544,10 @@ body {
   border-width: 2px;
 }
 
+.border-4 {
+  border-width: 4px;
+}
+
 .border-b {
   border-bottom-width: 1px;
 }
@@ -1568,6 +1566,10 @@ body {
 
 .border-t {
   border-top-width: 1px;
+}
+
+.border-solid {
+  border-style: solid;
 }
 
 .border-none {
@@ -1604,6 +1606,11 @@ body {
 
 .border-l-transparent {
   border-left-color: transparent;
+}
+
+.border-t-blue-600 {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(37 99 235 / var(--tw-border-opacity));
 }
 
 .border-t-transparent {
@@ -2108,6 +2115,24 @@ body {
     opacity: var(--tw-exit-opacity, 1);
     transform: translate3d(var(--tw-exit-translate-x, 0), var(--tw-exit-translate-y, 0), 0) scale3d(var(--tw-exit-scale, 1), var(--tw-exit-scale, 1), var(--tw-exit-scale, 1)) rotate(var(--tw-exit-rotate, 0));
   }
+}
+
+.animate-in {
+  animation-name: enter;
+  animation-duration: 150ms;
+  --tw-enter-opacity: initial;
+  --tw-enter-scale: initial;
+  --tw-enter-rotate: initial;
+  --tw-enter-translate-x: initial;
+  --tw-enter-translate-y: initial;
+}
+
+.fade-in-0 {
+  --tw-enter-opacity: 0;
+}
+
+.zoom-in-95 {
+  --tw-enter-scale: .95;
 }
 
 .duration-200 {
