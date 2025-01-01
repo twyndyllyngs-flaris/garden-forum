@@ -294,6 +294,9 @@ function Settings () {
       const {
         data: { user }
       } = await supabase.auth.getUser()
+      if(!user){
+        navigate('/')
+      }
       setLoggedInUser(user)
     }
 

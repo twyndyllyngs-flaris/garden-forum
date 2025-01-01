@@ -763,6 +763,7 @@ function Profile () {
   }
 
   const formatDateToMonthYear = (isoString: string | undefined) => {
+    console.log(isoString)
     if (!isoString) {
       return 'Invalid date' // Handle undefined or null
     }
