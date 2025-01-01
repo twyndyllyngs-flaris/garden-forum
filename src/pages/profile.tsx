@@ -831,7 +831,7 @@ function Profile () {
                   <h1 className='font-semibold text-gray-700 text-lg'>
                     @{profile?.username}
                   </h1>
-                  {loggedInUser?.id === uid && (
+                  {profile?.uid === loggedInUser?.id && (
                     <Button
                       variant='outline'
                       className='hover:bg-gray-200 text-sm'
