@@ -126,8 +126,10 @@ function Profile () {
     setLoggedInUser(user)
 
     try {
-      const { data: forums, error: forumsError } = await supabase.from('forums')
-        .select(`
+      const { data: forums, error: forumsError } = await supabase
+        .from('forums')
+        .select(
+          `
                     forum_id,
                     uid,
                     title,
@@ -137,7 +139,9 @@ function Profile () {
                     count_comments,
                     date_created,
                     links_imgs
-                `)
+                `
+        )
+        .order('date_created', { ascending: false })
 
       if (forumsError) throw forumsError
 
