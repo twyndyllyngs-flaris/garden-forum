@@ -736,17 +736,12 @@ function Forum () {
   }
 
   const orderForumByDate = () => {
+    console.log(forums)
     setForums(prevForums => {
-      // Helper function to extract only the date (day, month, year) for comparison
-      const getDateOnly = (dateString: string) => {
-        const date = new Date(dateString)
-        return date.toISOString().split('T')[0] // Extract YYYY-MM-DD format
-      }
-
       const sortedForums = [...prevForums].sort((a, b) => {
-        // Compare dates (day, month, year) only
-        const dateA = getDateOnly(a.date_created)
-        const dateB = getDateOnly(b.date_created)
+        // Compare timestamps directly for date and time
+        const dateA = new Date(a.date_created).getTime()
+        const dateB = new Date(b.date_created).getTime()
 
         if (dateA === dateB) {
           if (b.upvotes === a.upvotes) {
@@ -756,8 +751,8 @@ function Forum () {
           // Secondary criterion: upvotes
           return b.upvotes - a.upvotes
         }
-        // Primary criterion: Compare dates (newest first)
-        return new Date(dateB).getTime() - new Date(dateA).getTime()
+        // Primary criterion: Compare full timestamps (newest first)
+        return dateB - dateA
       })
 
       return sortedForums
@@ -1043,9 +1038,13 @@ function Forum () {
                     {forum.title}
                   </CardTitle>
                   <CardDescription className='mt-2 whitespace-pre-wrap'>
-                    {expandedStates[forum.forum_id]
+                    {expandedStates[forum.forum_id] ||
+                    forum.description.length <= 100
                       ? forum.description
-                      : forum.description.slice(0, 100) + '...'}
+                      : forum.description.slice(0, 100)}
+                    {forum.description.length > 100 &&
+                      !expandedStates[forum.forum_id] &&
+                      '...'}
                     {forum.description.length > 100 && (
                       <span
                         className='text-blue-500 cursor-pointer ml-2'

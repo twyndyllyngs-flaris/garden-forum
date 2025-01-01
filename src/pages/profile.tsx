@@ -581,6 +581,7 @@ function Profile () {
       uid: origCommentInterface.uid,
       parent_id: origCommentInterface.parent_id,
       content: origCommentInterface.content,
+      date_created: origCommentInterface.date_created,
       first_name: Object.values(origCommentInterface.profiles)[1],
       last_name: Object.values(origCommentInterface.profiles)[2],
       username: Object.values(origCommentInterface.profiles)[0]
@@ -616,6 +617,7 @@ function Profile () {
 
   const closeForumDialog = async () => {
     setForumDialog(false)
+    console.log(openedForumComments)
     // navigate('/forum');
   }
 

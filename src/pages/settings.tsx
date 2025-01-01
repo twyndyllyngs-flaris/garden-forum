@@ -580,7 +580,7 @@ function Settings () {
                     },
                     maxLength: {
                       value: 14,
-                      message: 'Firstnamename must be 14 characters at max' // Minimum length validation
+                      message: 'Firstname must be 14 characters at max' // Minimum length validation
                     }
                   })}
                   className='h-16'
