@@ -762,8 +762,16 @@ function Profile () {
     closeDeletePostDialog()
   }
 
-  const formatDateToMonthYear = (isoString: string) => {
+  const formatDateToMonthYear = (isoString: string | undefined) => {
+    if (!isoString) {
+      return 'Invalid date' // Handle undefined or null
+    }
+
     const date = new Date(isoString)
+    if (isNaN(date.getTime())) {
+      return 'Invalid date' // Handle invalid date strings
+    }
+
     return new Intl.DateTimeFormat('en-US', {
       month: 'long',
       year: 'numeric'
@@ -846,7 +854,11 @@ function Profile () {
                 </div>
 
                 <h2 className='font-semibold text-gray-700'>
-                  {forums.filter(forum => forum.profiles?.username === uid).length} posts
+                  {
+                    forums.filter(forum => forum.profiles?.username === uid)
+                      .length
+                  }{' '}
+                  posts
                 </h2>
 
                 <h2 className=' text-gray-700'>
@@ -1009,7 +1021,8 @@ function Profile () {
 
                 <TabsContent value='My Posts'>
                   <div className='flex flex-col gap-6'>
-                    {forums.filter(forum => forum?.profiles?.username === uid).length === 0 ? (
+                    {forums.filter(forum => forum?.profiles?.username === uid)
+                      .length === 0 ? (
                       <div className='text-gray-500 mt-10 mx-auto'>
                         {' '}
                         Your forums will show here.{' '}
@@ -1091,7 +1104,6 @@ function Profile () {
                                     className='text-md text-gray-700 cursor-pointer'
                                     onClick={e => e.stopPropagation()}
                                   >
-                                    
                                     {forum.profiles?.username}
                                   </Label>
 
@@ -1303,7 +1315,11 @@ function Profile () {
                                     <Avatar
                                       onClick={e => {
                                         e.stopPropagation()
-                                        goToProfile(forum && forum.profiles ? forum.profiles?.username : "")
+                                        goToProfile(
+                                          forum && forum.profiles
+                                            ? forum.profiles?.username
+                                            : ''
+                                        )
                                       }}
                                       className='min-w-[45px] min-h-[45px]'
                                     >
@@ -1327,7 +1343,11 @@ function Profile () {
                                       className='text-md text-gray-700 cursor-pointer'
                                       onClick={e => {
                                         e.stopPropagation()
-                                        goToProfile(forum && forum.profiles ? forum.profiles?.username : "")
+                                        goToProfile(
+                                          forum && forum.profiles
+                                            ? forum.profiles?.username
+                                            : ''
+                                        )
                                       }}
                                     >
                                       {forum.profiles?.username}
@@ -1509,7 +1529,9 @@ function Profile () {
                     <Avatar
                       onClick={e => {
                         e.stopPropagation()
-                        navigate(`/profile/${openedForumData?.profiles?.username}`)
+                        navigate(
+                          `/profile/${openedForumData?.profiles?.username}`
+                        )
                         closeForumDialog()
                       }}
                       className='cursor-pointer min-w-[45px] min-h-[45px]'
@@ -1528,7 +1550,9 @@ function Profile () {
                       className='text-md text-gray-700 cursor-pointer'
                       onClick={e => {
                         e.stopPropagation()
-                        navigate(`/profile/${openedForumData?.profiles?.username}`)
+                        navigate(
+                          `/profile/${openedForumData?.profiles?.username}`
+                        )
                         closeForumDialog()
                       }}
                     >
