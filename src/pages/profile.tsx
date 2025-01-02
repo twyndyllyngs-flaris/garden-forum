@@ -994,7 +994,7 @@ function Profile () {
                       : profile && profile.first_name + "'s"}{' '}
                     Posts
                   </TabsTrigger>
-                  {(profile.show_upvoted || uid === profile.username) && (
+                  {(profile.show_upvoted || loggedInUser?.id === profile?.uid) && (
                     <TabsTrigger
                       value='Upvoted Posts'
                       className='transition-none flex gap-2 data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-t-2 
